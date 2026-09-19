@@ -153,7 +153,15 @@ function openDay(k){
  document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;
  document.getElementById("dayTotal").textContent=yen(totalOf(es));
  const g=grouped(es), box=document.getElementById("dayDetails");
- box.innerHTML=g.length?g.map(([n,x])=>`<div class="edit-row"><div class="edit-info"><div class="edit-name">${n}</div><div class="edit-sub">${yen(x.subtotal)}</div></div><button class="step" data-pminus="${n}">−</button><span class="edit-count">${x.quantity}</span><button class="step plus" data-pplus="${n}">＋</button><button class="delete-btn" data-pdelete="${n}">削除</button></div>`).join(""):'<div class="empty" style="padding:14px">この日の処置はありません</div>';
+ box.innerHTML=g.length?g.map(([n,x])=>`<div class="day-edit-row">
+  <div class="day-edit-label"><div class="day-edit-name">${n}</div><div class="day-edit-price">${yen(x.subtotal)}</div></div>
+  <div class="day-edit-actions">
+    <button class="day-step" data-pminus="${n}" aria-label="${n}を1減らす">−</button>
+    <span class="day-count">${x.quantity}</span>
+    <button class="day-step day-plus" data-pplus="${n}" aria-label="${n}を1増やす">＋</button>
+    <button class="day-delete" data-pdelete="${n}">削除</button>
+  </div>
+</div>`).join(""):'<div class="empty" style="padding:14px">この日の処置はありません</div>';
  box.querySelectorAll("[data-pminus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pminus,-1));
  box.querySelectorAll("[data-pplus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pplus,1));
  box.querySelectorAll("[data-pdelete]").forEach(b=>b.onclick=()=>deletePast(b.dataset.pdelete));
