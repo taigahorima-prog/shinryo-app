@@ -57,6 +57,18 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 .editing-banner{display:none;background:#fff3cd;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px}
 .editing-banner.active{display:block}
 </style>
+
+<style>
+/* v3.1: 保存時の本日の収益カウントアップ */
+#total.revenue-pop{
+  animation: revenuePop .55s ease-out;
+}
+@keyframes revenuePop{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.10)}
+  100%{transform:scale(1)}
+}
+</style>
 </head>
 <body>
 <div id="mainView" class="view active">
@@ -166,16 +178,34 @@ function renderMain(){
  const g=grouped(draft);
  document.getElementById("details").innerHTML=g.length?g.map(([n,x])=>`<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${x.quantity}</span><span class="money">${yen(x.subtotal)}</span></div>`).join(""):'<div class="empty">まだ処置はありません</div>';
 }
+
+function animateRevenue(from,to){
+ const el=document.getElementById("total");
+ const duration=650,start=performance.now();
+ el.classList.remove("revenue-pop"); void el.offsetWidth; el.classList.add("revenue-pop");
+ function frame(now){
+   const p=Math.min(1,(now-start)/duration);
+   const eased=1-Math.pow(1-p,3);
+   el.textContent=yen(Math.round(from+(to-from)*eased));
+   if(p<1)requestAnimationFrame(frame);
+   else el.textContent=yen(to);
+ }
+ requestAnimationFrame(frame);
+}
+
 function saveVisit(){
  if(!draft.length)return;
- const k=todayKey(), visits=visitsFor(k).slice();
+ const k=todayKey(), beforeTotal=dayTotal(k), visits=visitsFor(k).slice();
  if(editingVisitId){
    const i=visits.findIndex(v=>v.id===editingVisitId);
    if(i>=0)visits[i]={...visits[i],items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
  }else{
    visits.push({id:uid(),createdAt:new Date().toISOString(),items:draft.map(e=>({...e,id:uid()}))});
  }
- data[k]=visits; saveData(); draft=[]; editingVisitId=null; renderMain();
+ data[k]=visits; saveData(); draft=[]; editingVisitId=null;
+ const afterTotal=dayTotal(k);
+ renderMain();
+ animateRevenue(beforeTotal,afterTotal);
 }
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0)}
 
