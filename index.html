@@ -37,6 +37,26 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 .stats{background:#fff;border-radius:14px;padding:14px;margin-bottom:18px}.stats-total{font-size:30px;font-weight:750;margin:4px 0 10px}.statline{display:flex;padding:4px 0;color:#555}.statline strong{margin-left:auto;color:#111}
 .daily{background:#fff;border-radius:14px;overflow:hidden}.daily-row{display:flex;align-items:center;width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:13px 14px;text-align:left}.daily-row:last-child{border-bottom:0}.daily-row .date{font-weight:600}.daily-row .amount{margin-left:auto;font-weight:650}.backbtn{border:0;background:none;color:#087ff5;font-size:16px;padding:8px 0}.detail-title{font-size:24px;font-weight:750;margin:6px 0 2px}.detail-total{font-size:32px;font-weight:750;margin-bottom:18px}
 </style>
+
+<style>
+/* v3.0: 1頭（1診療）ごとの仮入力→保存 */
+.draft-total-card{background:#fff;border-radius:14px;padding:14px;margin:14px 0;display:flex;align-items:center}
+.draft-total-card .draft-label{font-size:15px;color:#666}
+.draft-total-card .draft-money{margin-left:auto;font-size:24px;font-weight:750}
+.save-visit{width:100%;min-height:52px;border:0;border-radius:14px;background:#087ff5;color:#fff;font-size:18px;font-weight:700;margin:4px 0 14px}
+.save-visit:disabled{background:#d1d1d6;color:#8e8e93}
+.visit-card{background:#fff;border-radius:14px;margin-bottom:10px;overflow:hidden}
+.visit-head{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid #eee}
+.visit-title{font-weight:700}.visit-sum{margin-left:auto;font-weight:700}
+.visit-items{padding:4px 14px 10px}
+.visit-item{display:flex;gap:8px;padding:5px 0;font-size:14px}
+.visit-item .vi-name{flex:1}.visit-item .vi-qty{color:#666}.visit-item .vi-money{min-width:72px;text-align:right}
+.visit-actions{display:flex;gap:8px;padding:0 14px 12px}
+.visit-edit,.visit-delete{border:0;border-radius:10px;padding:8px 12px;font-size:14px}
+.visit-edit{background:#e9f3ff;color:#087ff5}.visit-delete{background:#ededf0;color:#d70015}
+.editing-banner{display:none;background:#fff3cd;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px}
+.editing-banner.active{display:block}
+</style>
 </head>
 <body>
 <div id="mainView" class="view active">
@@ -45,15 +65,20 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
   <div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
+<div id="editingBanner" class="editing-banner"></div>
 <section class="section">
-<div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="undo" class="linkbtn">1つ戻す</button></div>
+<div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="clearDraft" class="linkbtn">入力クリア</button></div>
 <div id="quick"></div>
 </section>
 <section class="section"><hr><div class="section-title"><h2>その他の処置</h2></div>
 <select id="otherSelect"><option value="">処置を選択してください</option></select>
 <div class="controls"><span class="caption">個数</span><button id="qminus" class="step">−</button><span id="quantity" class="count">1</span><button id="qplus" class="step">＋</button><button id="addOther" class="add" disabled>追加</button></div>
 </section>
-<section class="section"><hr><div class="section-title"><h2>今日の内訳</h2><div class="spacer"></div><button id="reset" class="linkbtn">リセット</button></div><div id="details"></div></section>
+
+<div class="draft-total-card"><span class="draft-label">今回の診療</span><span id="draftTotal" class="draft-money">¥0</span></div>
+<button id="saveVisit" class="save-visit" disabled>この診療を保存</button>
+
+<section class="section"><hr><div class="section-title"><h2>今回の入力内容</h2></div><div id="details"></div></section>
 </main>
 </div>
 
@@ -73,143 +98,174 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 <main>
 <button id="backToSummary" class="backbtn">‹ 月の集計</button>
 <div id="dayTitle" class="detail-title"></div><div id="dayTotal" class="detail-total"></div>
-<div id="dayDetails" class="daily"></div>
-<div class="past-add">
-<h3>この日に処置を追加</h3>
-<select id="pastSelect"><option value="">処置を選択してください</option></select>
-<div class="controls"><span class="caption">個数</span><button id="pastQminus" class="step">−</button><span id="pastQuantity" class="count">1</span><button id="pastQplus" class="step">＋</button><button id="pastAdd" class="add" disabled>追加</button></div>
-</div>
+<div id="dayDetails"></div>
 </main>
 </div>
 <script>
 const QUICK = [["初診", 1810], ["往診", 1420], ["点滴500ml", 2940], ["点滴1L", 3360], ["筋肉内注射", 350], ["皮下注射", 350], ["静脈内注射", 510], ["経口投薬", 660], ["洗浄（耳）", 1560], ["浣腸", 930], ["直腸検査", 1560], ["超音波検査", 1460], ["イソジン薬注", 3270], ["蹄病手術", 8160]];
 const OTHER = [["PLテスト", 550], ["血中ケトン", 780], ["細菌培養検査", 650], ["感受性ディスク検査", 1540], ["CG8", 2160], ["CHEM8", 2570], ["血液検査１項目", 390], ["血液生化学的検査（５種以上７種以下）", 1970], ["血液生化学的検査（８種又は９種）", 2380], ["血液生化学的検査（１０種以上）", 2770], ["糞便検査キット1種", 500], ["糞便検査キット2種", 630], ["糞便検査キット5種", 1150], ["洗浄（眼、涙管、鼻腔、膣、包皮、臍帯）", 550], ["洗浄（乳房内）", 850], ["薬浴 調剤を必要とするもの", 780], ["薬浴 調剤を必要としないもの", 830], ["鎮静術", 810], ["点滴2L", 3780], ["点滴3L", 4200], ["点滴4L", 4620], ["経口投薬 胃カテーテルによる投薬（ガス除去）（調剤）", 2130], ["塗布又は塗擦（水剤）", 540], ["塗布又は塗擦（育剤）", 550], ["穿胃", 2160], ["その他の外科的処置", 1260], ["その他の外科的処置（伸縮性接着包帯）", 1260], ["外傷治療 小 第１回", 1910], ["外傷治療 小 第２回以後", 930], ["外傷治療 大 第１回", 4680], ["外傷治療 大 第２回以後", 1910], ["外傷治療 小 第１回（伸縮性接着包帯）", 1910], ["外傷治療 小 第２回以後（伸縮性接着包帯）", 930], ["外傷治療 大 第１回（伸縮性接着包帯）", 4680], ["外傷治療 大 第２回以後（伸縮性接着包帯）", 1910], ["外傷治療（縫合加点）", 440], ["外傷治療（ギプス包帯加点）", 0], ["外傷治療（ギプス除去）", 1380], ["切開手術 小 第１回", 2710], ["切開手術 小 第２回以後", 1560], ["切開手術 大 第１回", 6370], ["切開手術 大 第２回以後", 2190], ["開腹（牛・馬）（帝王切開）", 77320], ["開腹（牛・馬）（第四胃変位整復手術）", 62050], ["開腹（牛・馬）（第四胃変位整復手術）（捻転整復）", 78300], ["蹄病処置（伸縮性接着包帯）", 5360], ["蹄病処置（蹄底ブロック又はギプス包帯加点）", 0], ["ナックル整復（ギプス包帯）", 5010]];
-const ALL = [...QUICK,...OTHER];
-const OLD_KEY="shinryo.web.entries.v1";
-const KEY="shinryo.web.daily.v2";
+const ALL=[...QUICK,...OTHER];
+const KEY="shinryo.web.visits.v3";
+const OLD_KEY="shinryo.web.daily.v2";
+const OLDEST_KEY="shinryo.web.entries.v1";
 const pad=n=>String(n).padStart(2,"0");
 const dateKey=(d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayKey=()=>dateKey(new Date());
 const yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
-let dailyData=JSON.parse(localStorage.getItem(KEY)||"{}");
-if(!Object.keys(dailyData).length){
-  const old=JSON.parse(localStorage.getItem(OLD_KEY)||"[]");
-  if(old.length) dailyData[todayKey()]=old;
+const uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random());
+
+let data=JSON.parse(localStorage.getItem(KEY)||"{}");
+
+// One-time migration: old day-based entries become one legacy visit per day.
+if(!Object.keys(data).length){
+  const oldDaily=JSON.parse(localStorage.getItem(OLD_KEY)||"{}");
+  if(Object.keys(oldDaily).length){
+    Object.entries(oldDaily).forEach(([k,items])=>{
+      if(items?.length)data[k]=[{id:uid(),createdAt:new Date().toISOString(),items:items.map(e=>({...e,id:e.id||uid()})),legacy:true}];
+    });
+  } else {
+    const oldest=JSON.parse(localStorage.getItem(OLDEST_KEY)||"[]");
+    if(oldest.length)data[todayKey()]=[{id:uid(),createdAt:new Date().toISOString(),items:oldest,legacy:true}];
+  }
+  localStorage.setItem(KEY,JSON.stringify(data));
 }
-let entries=dailyData[todayKey()]||[];
-let quantity=1;
+
+let draft=[]; let quantity=1; let editingVisitId=null;
 let shownMonth=new Date(); shownMonth.setDate(1);
-const save=()=>{dailyData[todayKey()]=entries;if(!entries.length)delete dailyData[todayKey()];localStorage.setItem(KEY,JSON.stringify(dailyData));};
-const countFor=name=>entries.filter(e=>e.name===name).reduce((a,e)=>a+e.quantity,0);
-function add(name,point,q=1){entries.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,point,quantity:q,createdAt:new Date().toISOString()});save();renderMain();}
-function removeOne(name){let i=-1;for(let x=entries.length-1;x>=0;x--)if(entries[x].name===name){i=x;break};if(i<0)return;if(entries[i].quantity<=1)entries.splice(i,1);else entries[i].quantity--;save();renderMain();}
-function grouped(es){const map=new Map();es.forEach(e=>{let g=map.get(e.name)||{quantity:0,subtotal:0};g.quantity+=e.quantity;g.subtotal+=e.point*e.quantity;map.set(e.name,g)});return ALL.filter(([n])=>map.has(n)).map(([n])=>[n,map.get(n)]);}
-function totalOf(es){return es.reduce((a,e)=>a+e.point*e.quantity,0)}
+
+const saveData=()=>localStorage.setItem(KEY,JSON.stringify(data));
+const totalItems=items=>items.reduce((a,e)=>a+e.point*e.quantity,0);
+const visitsFor=k=>data[k]||[];
+const dayTotal=k=>visitsFor(k).reduce((a,v)=>a+totalItems(v.items),0);
+const draftCount=name=>draft.filter(e=>e.name===name).reduce((a,e)=>a+e.quantity,0);
+
+function grouped(items){
+ const map=new Map();
+ items.forEach(e=>{let g=map.get(e.name)||{quantity:0,subtotal:0};g.quantity+=e.quantity;g.subtotal+=e.point*e.quantity;map.set(e.name,g)});
+ return ALL.filter(([n])=>map.has(n)).map(([n])=>[n,map.get(n)]);
+}
+function addDraft(name,point,q=1){draft.push({id:uid(),name,point,quantity:q});renderMain()}
+function removeDraft(name){
+ for(let i=draft.length-1;i>=0;i--)if(draft[i].name===name){if(draft[i].quantity<=1)draft.splice(i,1);else draft[i].quantity--;break}
+ renderMain();
+}
+function clearDraft(){draft=[];editingVisitId=null;renderMain()}
 function renderMain(){
- document.getElementById("total").textContent=yen(totalOf(entries));
- document.getElementById("undo").disabled=!entries.length;document.getElementById("reset").disabled=!entries.length;
- document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${countFor(n)===0?"disabled":""}>−</button><div class="count">${countFor(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
- document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{let t=QUICK.find(x=>x[0]===b.dataset.plus);add(t[0],t[1])});
- document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeOne(b.dataset.minus));
- const g=grouped(entries);document.getElementById("details").innerHTML=g.length?g.map(([n,x])=>`<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${x.quantity}</span><span class="money">${yen(x.subtotal)}</span></div>`).join(""):'<div class="empty">まだ処置はありません</div>';
+ document.getElementById("total").textContent=yen(dayTotal(todayKey()));
+ document.getElementById("draftTotal").textContent=yen(totalItems(draft));
+ document.getElementById("saveVisit").disabled=!draft.length;
+ document.getElementById("saveVisit").textContent=editingVisitId?"この診療を更新":"この診療を保存";
+ document.getElementById("clearDraft").disabled=!draft.length&&!editingVisitId;
+ const banner=document.getElementById("editingBanner");
+ if(editingVisitId){banner.classList.add("active");banner.textContent="保存済みの診療を編集中です。更新すると元の診療に上書きされます。"}
+ else banner.classList.remove("active");
+
+ document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${draftCount(n)===0?"disabled":""}>−</button><div class="count">${draftCount(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
+ document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const t=QUICK.find(x=>x[0]===b.dataset.plus);addDraft(t[0],t[1])});
+ document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeDraft(b.dataset.minus));
+ const g=grouped(draft);
+ document.getElementById("details").innerHTML=g.length?g.map(([n,x])=>`<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${x.quantity}</span><span class="money">${yen(x.subtotal)}</span></div>`).join(""):'<div class="empty">まだ処置はありません</div>';
+}
+function saveVisit(){
+ if(!draft.length)return;
+ const k=todayKey(), visits=visitsFor(k).slice();
+ if(editingVisitId){
+   const i=visits.findIndex(v=>v.id===editingVisitId);
+   if(i>=0)visits[i]={...visits[i],items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
+ }else{
+   visits.push({id:uid(),createdAt:new Date().toISOString(),items:draft.map(e=>({...e,id:uid()}))});
+ }
+ data[k]=visits; saveData(); draft=[]; editingVisitId=null; renderMain();
 }
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0)}
+
 function renderSummary(){
- const y=shownMonth.getFullYear(),m=shownMonth.getMonth();
- document.getElementById("monthTitle").textContent=`${y}年${m+1}月`;
- const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(dailyData).filter(k=>k.startsWith(prefix)&&dailyData[k].length).sort();
- const totals=keys.map(k=>[k,totalOf(dailyData[k])]);const mt=totals.reduce((a,x)=>a+x[1],0);
+ const y=shownMonth.getFullYear(),m=shownMonth.getMonth();document.getElementById("monthTitle").textContent=`${y}年${m+1}月`;
+ const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(data).filter(k=>k.startsWith(prefix)&&visitsFor(k).length).sort();
+ const totals=keys.map(k=>[k,dayTotal(k)]),mt=totals.reduce((a,x)=>a+x[1],0);
  document.getElementById("monthTotal").textContent=yen(mt);document.getElementById("workDays").textContent=`${keys.length}日`;document.getElementById("dayAverage").textContent=yen(keys.length?Math.round(mt/keys.length):0);
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
- for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dailyData[k]?totalOf(dailyData[k]):0;let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(dailyData[k]?.length)b.onclick=()=>openDay(k);cal.appendChild(b)}
+ for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>openDay(k);cal.appendChild(b)}
  const list=document.getElementById("dailyList");list.innerHTML=totals.length?totals.slice().reverse().map(([k,a])=>`<button class="daily-row" data-day="${k}"><span class="date">${Number(k.slice(5,7))}/${Number(k.slice(8,10))}</span><span class="amount">${yen(a)}</span></button>`).join(""):'<div class="empty" style="padding:14px">この月の記録はありません</div>';
  list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
 }
-let editingDay=null;
-function saveDaily(){localStorage.setItem(KEY,JSON.stringify(dailyData));}
-function changePast(name,delta){
- const es=dailyData[editingDay]||[];
- if(delta>0){
-   const master=ALL.find(x=>x[0]===name); if(!master)return;
-   es.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name:master[0],point:master[1],quantity:1,createdAt:new Date().toISOString()});
- }else{
-   for(let i=es.length-1;i>=0;i--)if(es[i].name===name){if(es[i].quantity<=1)es.splice(i,1);else es[i].quantity--;break}
- }
- if(es.length)dailyData[editingDay]=es;else delete dailyData[editingDay];
- if(editingDay===todayKey())entries=dailyData[editingDay]||[];
- saveDaily();renderMain();openDay(editingDay);
-}
-function deletePast(name){
- if(!confirm(`「${name}」をこの日の記録から削除しますか？`))return;
- const es=(dailyData[editingDay]||[]).filter(e=>e.name!==name);
- if(es.length)dailyData[editingDay]=es;else delete dailyData[editingDay];
- if(editingDay===todayKey())entries=dailyData[editingDay]||[];
- saveDaily();renderMain();openDay(editingDay);
-}
+let viewingDay=null;
 function openDay(k){
- editingDay=k;const es=dailyData[k]||[];
+ viewingDay=k;const visits=visitsFor(k);
  document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;
- document.getElementById("dayTotal").textContent=yen(totalOf(es));
- const g=grouped(es), box=document.getElementById("dayDetails");
- box.innerHTML=g.length?g.map(([n,x])=>`<div class="day-edit-row">
-  <div class="day-edit-label"><div class="day-edit-name">${n}</div><div class="day-edit-price">${yen(x.subtotal)}</div></div>
-  <div class="day-edit-actions">
-    <button class="day-step" data-pminus="${n}" aria-label="${n}を1減らす">−</button>
-    <span class="day-count">${x.quantity}</span>
-    <button class="day-step day-plus" data-pplus="${n}" aria-label="${n}を1増やす">＋</button>
-    <button class="day-delete" data-pdelete="${n}">削除</button>
-  </div>
-</div>`).join(""):'<div class="empty" style="padding:14px">この日の処置はありません</div>';
- box.querySelectorAll("[data-pminus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pminus,-1));
- box.querySelectorAll("[data-pplus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pplus,1));
- box.querySelectorAll("[data-pdelete]").forEach(b=>b.onclick=()=>deletePast(b.dataset.pdelete));
+ document.getElementById("dayTotal").textContent=yen(dayTotal(k));
+ const box=document.getElementById("dayDetails");
+ box.innerHTML=visits.length?visits.map((v,i)=>{
+   const g=grouped(v.items);
+   return `<div class="visit-card"><div class="visit-head"><span class="visit-title">診療${i+1}</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
+   <div class="visit-items">${g.map(([n,x])=>`<div class="visit-item"><span class="vi-name">${n}</span><span class="vi-qty">×${x.quantity}</span><span class="vi-money">${yen(x.subtotal)}</span></div>`).join("")}</div>
+   <div class="visit-actions"><button class="visit-edit" data-edit="${v.id}">編集</button><button class="visit-delete" data-delete="${v.id}">この診療を削除</button></div></div>`;
+ }).join(""):'<div class="empty">この日の診療はありません</div>';
+ box.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteVisit(k,b.dataset.delete));
+ box.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editVisit(k,b.dataset.edit));
  show("dayView");
 }
+function deleteVisit(k,id){
+ if(!confirm("この診療1件を削除しますか？"))return;
+ const vs=visitsFor(k).filter(v=>v.id!==id); if(vs.length)data[k]=vs;else delete data[k];saveData();openDay(k);
+}
+function editVisit(k,id){
+ const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
+ // Current-day visits can be edited through the main input screen.
+ if(k===todayKey()){
+   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;renderMain();show("mainView");
+ }else{
+   // Keep past-date editing self-contained: +/- and delete on the visit.
+   renderPastVisitEditor(k,id);
+ }
+}
+function renderPastVisitEditor(k,id){
+ const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
+ document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;
+ document.getElementById("dayTotal").textContent=yen(dayTotal(k));
+ const g=grouped(v.items),box=document.getElementById("dayDetails");
+ box.innerHTML=`<div class="visit-card"><div class="visit-head"><span class="visit-title">診療を編集</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
+ ${g.map(([n,x])=>`<div class="day-edit-row"><div class="day-edit-label"><div class="day-edit-name">${n}</div><div class="day-edit-price">${yen(x.subtotal)}</div></div><div class="day-edit-actions"><button class="day-step" data-vminus="${n}">−</button><span class="day-count">${x.quantity}</span><button class="day-step day-plus" data-vplus="${n}">＋</button><button class="day-delete" data-vdelete="${n}">削除</button></div></div>`).join("")}
+ <div class="visit-actions"><button class="visit-edit" id="donePastEdit">編集完了</button></div></div>`;
+ box.querySelectorAll("[data-vminus]").forEach(b=>b.onclick=()=>changeVisitItem(k,id,b.dataset.vminus,-1));
+ box.querySelectorAll("[data-vplus]").forEach(b=>b.onclick=()=>changeVisitItem(k,id,b.dataset.vplus,1));
+ box.querySelectorAll("[data-vdelete]").forEach(b=>b.onclick=()=>deleteVisitItem(k,id,b.dataset.vdelete));
+ document.getElementById("donePastEdit").onclick=()=>openDay(k);
+}
+function changeVisitItem(k,id,name,delta){
+ const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
+ if(delta>0){const master=ALL.find(x=>x[0]===name);v.items.push({id:uid(),name:master[0],point:master[1],quantity:1})}
+ else{for(let i=v.items.length-1;i>=0;i--)if(v.items[i].name===name){if(v.items[i].quantity<=1)v.items.splice(i,1);else v.items[i].quantity--;break}}
+ if(!v.items.length){deleteVisit(k,id);return} saveData();renderPastVisitEditor(k,id);
+}
+function deleteVisitItem(k,id,name){
+ const v=visitsFor(k).find(x=>x.id===id);if(!v)return;v.items=v.items.filter(e=>e.name!==name);
+ if(!v.items.length){deleteVisit(k,id);return}saveData();renderPastVisitEditor(k,id);
+}
+
 const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
 document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
-document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let[n,p]=OTHER[Number(sel.value)];add(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
-document.getElementById("undo").onclick=()=>{if(entries.length){entries.pop();save();renderMain()}};
-document.getElementById("reset").onclick=()=>{if(entries.length&&confirm("今日の入力をすべて削除しますか？")){entries=[];save();renderMain()}};
+document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let[n,p]=OTHER[Number(sel.value)];addDraft(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
+document.getElementById("clearDraft").onclick=()=>{if((draft.length||editingVisitId)&&confirm("今回の入力をクリアしますか？"))clearDraft()};
+document.getElementById("saveVisit").onclick=saveVisit;
 document.getElementById("openSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("closeSummary").onclick=()=>show("mainView");
 document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);renderSummary()};
 document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);renderSummary()};
 
-let pastQuantity=1;
-const pastSel=document.getElementById("pastSelect");
-ALL.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;pastSel.appendChild(o)});
-pastSel.onchange=()=>document.getElementById("pastAdd").disabled=pastSel.value==="";
-document.getElementById("pastQminus").onclick=()=>{pastQuantity=Math.max(1,pastQuantity-1);document.getElementById("pastQuantity").textContent=pastQuantity};
-document.getElementById("pastQplus").onclick=()=>{pastQuantity=Math.min(99,pastQuantity+1);document.getElementById("pastQuantity").textContent=pastQuantity};
-document.getElementById("pastAdd").onclick=()=>{
- if(pastSel.value===""||!editingDay)return;
- let[n,p]=ALL[Number(pastSel.value)],es=dailyData[editingDay]||[];
- es.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name:n,point:p,quantity:pastQuantity,createdAt:new Date().toISOString()});
- dailyData[editingDay]=es;
- if(editingDay===todayKey())entries=es;
- saveDaily();renderMain();
- pastSel.value="";pastQuantity=1;document.getElementById("pastQuantity").textContent=1;document.getElementById("pastAdd").disabled=true;
- openDay(editingDay);
-};
-
-// v2.4: iOS Safari/PWA のピンチ・ダブルタップ拡大を抑止
-document.addEventListener("gesturestart", e => e.preventDefault(), {passive:false});
-document.addEventListener("gesturechange", e => e.preventDefault(), {passive:false});
-document.addEventListener("gestureend", e => e.preventDefault(), {passive:false});
-document.addEventListener("touchmove", e => {
-  if (e.touches && e.touches.length > 1) e.preventDefault();
-}, {passive:false});
-let lastTouchEnd = 0;
-document.addEventListener("touchend", e => {
-  const now = Date.now();
-  if (now - lastTouchEnd <= 350) e.preventDefault();
-  lastTouchEnd = now;
-}, {passive:false});
+// iOS zoom prevention retained.
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
+document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+let lastTouchEnd=0;document.addEventListener("touchend",e=>{const now=Date.now();if(now-lastTouchEnd<=350)e.preventDefault();lastTouchEnd=now},{passive:false});
 
 renderMain();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
-</script></body></html>
+</script>
+</body>
+</html>
