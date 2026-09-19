@@ -70,7 +70,16 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 </div>
 
 <div id="dayView" class="view">
-<main><button id="backToSummary" class="backbtn">‹ 月の集計</button><div id="dayTitle" class="detail-title"></div><div id="dayTotal" class="detail-total"></div><div id="dayDetails" class="daily"></div></main>
+<main>
+<button id="backToSummary" class="backbtn">‹ 月の集計</button>
+<div id="dayTitle" class="detail-title"></div><div id="dayTotal" class="detail-total"></div>
+<div id="dayDetails" class="daily"></div>
+<div class="past-add">
+<h3>この日に処置を追加</h3>
+<select id="pastSelect"><option value="">処置を選択してください</option></select>
+<div class="controls"><span class="caption">個数</span><button id="pastQminus" class="step">−</button><span id="pastQuantity" class="count">1</span><button id="pastQplus" class="step">＋</button><button id="pastAdd" class="add" disabled>追加</button></div>
+</div>
+</main>
 </div>
 <script>
 const QUICK = [["初診", 1810], ["往診", 1420], ["点滴500ml", 2940], ["点滴1L", 3360], ["筋肉内注射", 350], ["皮下注射", 350], ["静脈内注射", 510], ["経口投薬", 660], ["洗浄（耳）", 1560], ["浣腸", 930], ["直腸検査", 1560], ["超音波検査", 1460], ["イソジン薬注", 3270], ["蹄病手術", 8160]];
@@ -118,7 +127,38 @@ function renderSummary(){
  const list=document.getElementById("dailyList");list.innerHTML=totals.length?totals.slice().reverse().map(([k,a])=>`<button class="daily-row" data-day="${k}"><span class="date">${Number(k.slice(5,7))}/${Number(k.slice(8,10))}</span><span class="amount">${yen(a)}</span></button>`).join(""):'<div class="empty" style="padding:14px">この月の記録はありません</div>';
  list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
 }
-function openDay(k){const es=dailyData[k]||[];document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;document.getElementById("dayTotal").textContent=yen(totalOf(es));const g=grouped(es);document.getElementById("dayDetails").innerHTML=g.map(([n,x])=>`<div class="daily-row"><span class="date">${n} ×${x.quantity}</span><span class="amount">${yen(x.subtotal)}</span></div>`).join("");show("dayView")}
+let editingDay=null;
+function saveDaily(){localStorage.setItem(KEY,JSON.stringify(dailyData));}
+function changePast(name,delta){
+ const es=dailyData[editingDay]||[];
+ if(delta>0){
+   const master=ALL.find(x=>x[0]===name); if(!master)return;
+   es.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name:master[0],point:master[1],quantity:1,createdAt:new Date().toISOString()});
+ }else{
+   for(let i=es.length-1;i>=0;i--)if(es[i].name===name){if(es[i].quantity<=1)es.splice(i,1);else es[i].quantity--;break}
+ }
+ if(es.length)dailyData[editingDay]=es;else delete dailyData[editingDay];
+ if(editingDay===todayKey())entries=dailyData[editingDay]||[];
+ saveDaily();renderMain();openDay(editingDay);
+}
+function deletePast(name){
+ if(!confirm(`「${name}」をこの日の記録から削除しますか？`))return;
+ const es=(dailyData[editingDay]||[]).filter(e=>e.name!==name);
+ if(es.length)dailyData[editingDay]=es;else delete dailyData[editingDay];
+ if(editingDay===todayKey())entries=dailyData[editingDay]||[];
+ saveDaily();renderMain();openDay(editingDay);
+}
+function openDay(k){
+ editingDay=k;const es=dailyData[k]||[];
+ document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;
+ document.getElementById("dayTotal").textContent=yen(totalOf(es));
+ const g=grouped(es), box=document.getElementById("dayDetails");
+ box.innerHTML=g.length?g.map(([n,x])=>`<div class="edit-row"><div class="edit-info"><div class="edit-name">${n}</div><div class="edit-sub">${yen(x.subtotal)}</div></div><button class="step" data-pminus="${n}">−</button><span class="edit-count">${x.quantity}</span><button class="step plus" data-pplus="${n}">＋</button><button class="delete-btn" data-pdelete="${n}">削除</button></div>`).join(""):'<div class="empty" style="padding:14px">この日の処置はありません</div>';
+ box.querySelectorAll("[data-pminus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pminus,-1));
+ box.querySelectorAll("[data-pplus]").forEach(b=>b.onclick=()=>changePast(b.dataset.pplus,1));
+ box.querySelectorAll("[data-pdelete]").forEach(b=>b.onclick=()=>deletePast(b.dataset.pdelete));
+ show("dayView");
+}
 const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
 document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
@@ -130,6 +170,23 @@ document.getElementById("closeSummary").onclick=()=>show("mainView");
 document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);renderSummary()};
 document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);renderSummary()};
+
+let pastQuantity=1;
+const pastSel=document.getElementById("pastSelect");
+ALL.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;pastSel.appendChild(o)});
+pastSel.onchange=()=>document.getElementById("pastAdd").disabled=pastSel.value==="";
+document.getElementById("pastQminus").onclick=()=>{pastQuantity=Math.max(1,pastQuantity-1);document.getElementById("pastQuantity").textContent=pastQuantity};
+document.getElementById("pastQplus").onclick=()=>{pastQuantity=Math.min(99,pastQuantity+1);document.getElementById("pastQuantity").textContent=pastQuantity};
+document.getElementById("pastAdd").onclick=()=>{
+ if(pastSel.value===""||!editingDay)return;
+ let[n,p]=ALL[Number(pastSel.value)],es=dailyData[editingDay]||[];
+ es.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name:n,point:p,quantity:pastQuantity,createdAt:new Date().toISOString()});
+ dailyData[editingDay]=es;
+ if(editingDay===todayKey())entries=es;
+ saveDaily();renderMain();
+ pastSel.value="";pastQuantity=1;document.getElementById("pastQuantity").textContent=1;document.getElementById("pastAdd").disabled=true;
+ openDay(editingDay);
+};
 renderMain();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
 </script></body></html>
