@@ -69,11 +69,20 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
   100%{transform:scale(1)}
 }
 </style>
+
+<style>
+/* v3.2: iPhone Safariの誤ダブルタップズーム対策 */
+html,body{touch-action:manipulation}
+button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
+.visit-edit,.visit-delete,.day-step,.day-delete,.backbtn,select{
+  touch-action:manipulation;
+}
+</style>
 </head>
 <body>
 <div id="mainView" class="view active">
 <header>
-  <div class="topline"><div class="nav">診療点数</div><button id="openSummary" class="summary-btn">集計</button></div>
+  <div class="topline"><div class="spacer"></div><button id="openSummary" class="summary-btn">集計</button></div>
   <div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
@@ -96,7 +105,7 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 
 <div id="summaryView" class="view">
 <main>
-<button id="closeSummary" class="backbtn">‹ 診療点数</button>
+<button id="closeSummary" class="backbtn">‹ 戻る</button>
 <div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
 <div id="calendar" class="calendar"></div>
 <div class="stats"><div class="label">この月の収益</div><div id="monthTotal" class="stats-total">¥0</div>
@@ -292,7 +301,15 @@ document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
-let lastTouchEnd=0;document.addEventListener("touchend",e=>{const now=Date.now();if(now-lastTouchEnd<=350)e.preventDefault();lastTouchEnd=now},{passive:false});
+let lastTapTime=0,lastTapTarget=null,lastTapX=0,lastTapY=0;
+document.addEventListener("touchend",e=>{
+  const now=Date.now(),t=e.changedTouches&&e.changedTouches[0];
+  const x=t?t.clientX:0,y=t?t.clientY:0;
+  const sameTarget=e.target===lastTapTarget;
+  const close=Math.abs(x-lastTapX)<32&&Math.abs(y-lastTapY)<32;
+  if(now-lastTapTime<420&&sameTarget&&close)e.preventDefault();
+  lastTapTime=now;lastTapTarget=e.target;lastTapX=x;lastTapY=y;
+},{passive:false});
 
 renderMain();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
