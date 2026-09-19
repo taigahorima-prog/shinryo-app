@@ -25,9 +25,25 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 .controls{display:flex;align-items:center;gap:8px;margin-top:12px}.controls .caption{font-size:14px;color:#737378;margin-right:auto}
 .add{height:44px;min-width:84px;border:0;border-radius:10px;background:#087ff5;color:#fff;font-weight:650}.add:disabled{opacity:.35}
 .detail{display:flex;align-items:baseline;padding:5px 0;gap:6px}.detail-name{font-size:14px}.qty{font-size:12px;color:#737378}.money{margin-left:auto;font-size:14px;font-weight:650}.empty{font-size:14px;color:#737378}
-</style></head>
+</style>
+<style>
+.topline{display:flex;align-items:center}.topline .nav{flex:1}.summary-btn{position:absolute;right:12px;top:calc(env(safe-area-inset-top) + 5px);border:0;background:none;color:#087ff5;font-size:16px;font-weight:600;padding:10px}
+.view{display:none}.view.active{display:block}
+.summary-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}.summary-head h2{flex:1;text-align:center;margin:0;font-size:20px}
+.monthbtn{width:42px;height:38px;border:1px solid #c8c8cc;background:#fff;border-radius:10px;font-size:20px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:18px}.dow{text-align:center;color:#737378;font-size:12px;padding:4px 0}
+.day{min-height:50px;border:0;border-radius:10px;background:#fff;padding:5px 2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.day.blank{background:transparent}.day.today{outline:2px solid #087ff5}.day.has{font-weight:650}.day .mini{font-size:9px;color:#737378;white-space:nowrap}
+.stats{background:#fff;border-radius:14px;padding:14px;margin-bottom:18px}.stats-total{font-size:30px;font-weight:750;margin:4px 0 10px}.statline{display:flex;padding:4px 0;color:#555}.statline strong{margin-left:auto;color:#111}
+.daily{background:#fff;border-radius:14px;overflow:hidden}.daily-row{display:flex;align-items:center;width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:13px 14px;text-align:left}.daily-row:last-child{border-bottom:0}.daily-row .date{font-weight:600}.daily-row .amount{margin-left:auto;font-weight:650}.backbtn{border:0;background:none;color:#087ff5;font-size:16px;padding:8px 0}.detail-title{font-size:24px;font-weight:750;margin:6px 0 2px}.detail-total{font-size:32px;font-weight:750;margin-bottom:18px}
+</style>
+</head>
 <body>
-<header><div class="nav">診療点数</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div></header>
+<div id="mainView" class="view active">
+<header>
+  <div class="topline"><div class="nav">診療点数</div><button id="openSummary" class="summary-btn">集計</button></div>
+  <div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+</header>
 <main>
 <section class="section">
 <div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="undo" class="linkbtn">1つ戻す</button></div>
@@ -39,43 +55,81 @@ select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;pa
 </section>
 <section class="section"><hr><div class="section-title"><h2>今日の内訳</h2><div class="spacer"></div><button id="reset" class="linkbtn">リセット</button></div><div id="details"></div></section>
 </main>
+</div>
+
+<div id="summaryView" class="view">
+<main>
+<button id="closeSummary" class="backbtn">‹ 診療点数</button>
+<div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
+<div id="calendar" class="calendar"></div>
+<div class="stats"><div class="label">この月の収益</div><div id="monthTotal" class="stats-total">¥0</div>
+<div class="statline"><span>診療日数</span><strong id="workDays">0日</strong></div>
+<div class="statline"><span>1日平均</span><strong id="dayAverage">¥0</strong></div></div>
+<div class="section-title"><h2>この月の一覧</h2></div><div id="dailyList" class="daily"></div>
+</main>
+</div>
+
+<div id="dayView" class="view">
+<main><button id="backToSummary" class="backbtn">‹ 月の集計</button><div id="dayTitle" class="detail-title"></div><div id="dayTotal" class="detail-total"></div><div id="dayDetails" class="daily"></div></main>
+</div>
 <script>
 const QUICK = [["初診", 1810], ["往診", 1420], ["点滴500ml", 2940], ["点滴1L", 3360], ["筋肉内注射", 350], ["皮下注射", 350], ["静脈内注射", 510], ["経口投薬", 660], ["洗浄（耳）", 1560], ["浣腸", 930], ["直腸検査", 1560], ["超音波検査", 1460], ["イソジン薬注", 3270], ["蹄病手術", 8160]];
 const OTHER = [["PLテスト", 550], ["血中ケトン", 780], ["細菌培養検査", 650], ["感受性ディスク検査", 1540], ["CG8", 2160], ["CHEM8", 2570], ["血液検査１項目", 390], ["血液生化学的検査（５種以上７種以下）", 1970], ["血液生化学的検査（８種又は９種）", 2380], ["血液生化学的検査（１０種以上）", 2770], ["糞便検査キット1種", 500], ["糞便検査キット2種", 630], ["糞便検査キット5種", 1150], ["洗浄（眼、涙管、鼻腔、膣、包皮、臍帯）", 550], ["洗浄（乳房内）", 850], ["薬浴 調剤を必要とするもの", 780], ["薬浴 調剤を必要としないもの", 830], ["鎮静術", 810], ["点滴2L", 3780], ["点滴3L", 4200], ["点滴4L", 4620], ["経口投薬 胃カテーテルによる投薬（ガス除去）（調剤）", 2130], ["塗布又は塗擦（水剤）", 540], ["塗布又は塗擦（育剤）", 550], ["穿胃", 2160], ["その他の外科的処置", 1260], ["その他の外科的処置（伸縮性接着包帯）", 1260], ["外傷治療 小 第１回", 1910], ["外傷治療 小 第２回以後", 930], ["外傷治療 大 第１回", 4680], ["外傷治療 大 第２回以後", 1910], ["外傷治療 小 第１回（伸縮性接着包帯）", 1910], ["外傷治療 小 第２回以後（伸縮性接着包帯）", 930], ["外傷治療 大 第１回（伸縮性接着包帯）", 4680], ["外傷治療 大 第２回以後（伸縮性接着包帯）", 1910], ["外傷治療（縫合加点）", 440], ["外傷治療（ギプス包帯加点）", 0], ["外傷治療（ギプス除去）", 1380], ["切開手術 小 第１回", 2710], ["切開手術 小 第２回以後", 1560], ["切開手術 大 第１回", 6370], ["切開手術 大 第２回以後", 2190], ["開腹（牛・馬）（帝王切開）", 77320], ["開腹（牛・馬）（第四胃変位整復手術）", 62050], ["開腹（牛・馬）（第四胃変位整復手術）（捻転整復）", 78300], ["蹄病処置（伸縮性接着包帯）", 5360], ["蹄病処置（蹄底ブロック又はギプス包帯加点）", 0], ["ナックル整復（ギプス包帯）", 5010]];
 const ALL = [...QUICK,...OTHER];
-const KEY="shinryo.web.entries.v1";
-let entries = JSON.parse(localStorage.getItem(KEY)||"[]");
-let quantity=1;
-const yen=n=>"¥"+Number(n).toLocaleString("ja-JP");
-const save=()=>localStorage.setItem(KEY,JSON.stringify(entries));
-const countFor=name=>entries.filter(e=>e.name===name).reduce((a,e)=>a+e.quantity,0);
-function add(name,point,q=1){entries.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,point,quantity:q,createdAt:new Date().toISOString()});save();render();}
-function removeOne(name){
- let i=-1; for(let x=entries.length-1;x>=0;x--){if(entries[x].name===name){i=x;break}}
- if(i<0)return;
- if(entries[i].quantity<=1)entries.splice(i,1); else entries[i].quantity--;
- save();render();
+const OLD_KEY="shinryo.web.entries.v1";
+const KEY="shinryo.web.daily.v2";
+const pad=n=>String(n).padStart(2,"0");
+const dateKey=(d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayKey=()=>dateKey(new Date());
+const yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
+let dailyData=JSON.parse(localStorage.getItem(KEY)||"{}");
+if(!Object.keys(dailyData).length){
+  const old=JSON.parse(localStorage.getItem(OLD_KEY)||"[]");
+  if(old.length) dailyData[todayKey()]=old;
 }
-function render(){
- document.getElementById("total").textContent=yen(entries.reduce((a,e)=>a+e.point*e.quantity,0));
- document.getElementById("undo").disabled=!entries.length;
- document.getElementById("reset").disabled=!entries.length;
+let entries=dailyData[todayKey()]||[];
+let quantity=1;
+let shownMonth=new Date(); shownMonth.setDate(1);
+const save=()=>{dailyData[todayKey()]=entries;if(!entries.length)delete dailyData[todayKey()];localStorage.setItem(KEY,JSON.stringify(dailyData));};
+const countFor=name=>entries.filter(e=>e.name===name).reduce((a,e)=>a+e.quantity,0);
+function add(name,point,q=1){entries.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,point,quantity:q,createdAt:new Date().toISOString()});save();renderMain();}
+function removeOne(name){let i=-1;for(let x=entries.length-1;x>=0;x--)if(entries[x].name===name){i=x;break};if(i<0)return;if(entries[i].quantity<=1)entries.splice(i,1);else entries[i].quantity--;save();renderMain();}
+function grouped(es){const map=new Map();es.forEach(e=>{let g=map.get(e.name)||{quantity:0,subtotal:0};g.quantity+=e.quantity;g.subtotal+=e.point*e.quantity;map.set(e.name,g)});return ALL.filter(([n])=>map.has(n)).map(([n])=>[n,map.get(n)]);}
+function totalOf(es){return es.reduce((a,e)=>a+e.point*e.quantity,0)}
+function renderMain(){
+ document.getElementById("total").textContent=yen(totalOf(entries));
+ document.getElementById("undo").disabled=!entries.length;document.getElementById("reset").disabled=!entries.length;
  document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${countFor(n)===0?"disabled":""}>−</button><div class="count">${countFor(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{let t=QUICK.find(x=>x[0]===b.dataset.plus);add(t[0],t[1])});
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeOne(b.dataset.minus));
- const grouped=new Map();
- entries.forEach(e=>{let g=grouped.get(e.name)||{quantity:0,subtotal:0};g.quantity+=e.quantity;g.subtotal+=e.point*e.quantity;grouped.set(e.name,g)});
- let d=ALL.filter(([n])=>grouped.has(n)).map(([n])=>{let g=grouped.get(n);return `<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${g.quantity}</span><span class="money">${yen(g.subtotal)}</span></div>`}).join("");
- document.getElementById("details").innerHTML=d||'<div class="empty">まだ処置はありません</div>';
+ const g=grouped(entries);document.getElementById("details").innerHTML=g.length?g.map(([n,x])=>`<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${x.quantity}</span><span class="money">${yen(x.subtotal)}</span></div>`).join(""):'<div class="empty">まだ処置はありません</div>';
 }
-const sel=document.getElementById("otherSelect");
-OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});
-sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
+function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0)}
+function renderSummary(){
+ const y=shownMonth.getFullYear(),m=shownMonth.getMonth();
+ document.getElementById("monthTitle").textContent=`${y}年${m+1}月`;
+ const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(dailyData).filter(k=>k.startsWith(prefix)&&dailyData[k].length).sort();
+ const totals=keys.map(k=>[k,totalOf(dailyData[k])]);const mt=totals.reduce((a,x)=>a+x[1],0);
+ document.getElementById("monthTotal").textContent=yen(mt);document.getElementById("workDays").textContent=`${keys.length}日`;document.getElementById("dayAverage").textContent=yen(keys.length?Math.round(mt/keys.length):0);
+ const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
+ const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
+ for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
+ for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dailyData[k]?totalOf(dailyData[k]):0;let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(dailyData[k]?.length)b.onclick=()=>openDay(k);cal.appendChild(b)}
+ const list=document.getElementById("dailyList");list.innerHTML=totals.length?totals.slice().reverse().map(([k,a])=>`<button class="daily-row" data-day="${k}"><span class="date">${Number(k.slice(5,7))}/${Number(k.slice(8,10))}</span><span class="amount">${yen(a)}</span></button>`).join(""):'<div class="empty" style="padding:14px">この月の記録はありません</div>';
+ list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
+}
+function openDay(k){const es=dailyData[k]||[];document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;document.getElementById("dayTotal").textContent=yen(totalOf(es));const g=grouped(es);document.getElementById("dayDetails").innerHTML=g.map(([n,x])=>`<div class="daily-row"><span class="date">${n} ×${x.quantity}</span><span class="amount">${yen(x.subtotal)}</span></div>`).join("");show("dayView")}
+const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
 document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
-document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let [n,p]=OTHER[Number(sel.value)];add(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
-document.getElementById("undo").onclick=()=>{if(entries.length){entries.pop();save();render()}};
-document.getElementById("reset").onclick=()=>{if(entries.length&&confirm("今日の入力をすべて削除しますか？")){entries=[];save();render()}};
-render();
-if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
+document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let[n,p]=OTHER[Number(sel.value)];add(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
+document.getElementById("undo").onclick=()=>{if(entries.length){entries.pop();save();renderMain()}};
+document.getElementById("reset").onclick=()=>{if(entries.length&&confirm("今日の入力をすべて削除しますか？")){entries=[];save();renderMain()}};
+document.getElementById("openSummary").onclick=()=>{renderSummary();show("summaryView")};
+document.getElementById("closeSummary").onclick=()=>show("mainView");
+document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
+document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);renderSummary()};
+document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);renderSummary()};
+renderMain();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
 </script></body></html>
