@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="診療収益">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>診療収益</title>
+<style>
+*{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#111;background:#f7f7f8}
+body{margin:0;background:#f7f7f8}
+header{position:sticky;top:0;z-index:20;background:rgba(247,247,248,.97);backdrop-filter:blur(12px);border-bottom:1px solid #ddd;padding:calc(env(safe-area-inset-top) + 8px) 16px 12px}
+.nav{text-align:center;font-weight:650;font-size:17px;margin-bottom:9px}.label{font-size:14px;color:#6b6b70}.total{font-size:42px;font-weight:760;letter-spacing:-1px;margin-top:2px}
+main{max-width:600px;margin:auto;padding:18px 16px calc(44px + env(safe-area-inset-bottom))}
+.section{margin-bottom:28px}.section-title{display:flex;align-items:center;margin-bottom:12px}.section-title h2{font-size:20px;margin:0}.spacer{flex:1}
+button,select{font:inherit}.linkbtn{border:0;background:none;color:#0677df;font-size:14px;padding:8px}
+.row{display:flex;align-items:center;gap:9px;background:#fff;border-radius:13px;padding:9px 12px;margin-bottom:8px}
+.info{min-width:0;flex:1}.name{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.price{font-size:13px;color:#737378;margin-top:3px}
+.step{width:44px;height:44px;border:1px solid #c8c8cc;border-radius:10px;background:#fff;font-size:23px}.plus{background:#087ff5;color:#fff;border-color:#087ff5}.step:disabled{opacity:.35}.count{width:28px;text-align:center;font-size:18px;font-weight:650}
+hr{border:0;border-top:1px solid #d8d8dc;margin:0 0 18px}
+select{width:100%;min-height:54px;border:0;border-radius:12px;background:#fff;padding:0 14px;color:#111}
+.controls{display:flex;align-items:center;gap:8px;margin-top:12px}.controls .caption{font-size:14px;color:#737378;margin-right:auto}
+.add{height:44px;min-width:84px;border:0;border-radius:10px;background:#087ff5;color:#fff;font-weight:650}.add:disabled{opacity:.35}
+.detail{display:flex;align-items:baseline;padding:5px 0;gap:6px}.detail-name{font-size:14px}.qty{font-size:12px;color:#737378}.money{margin-left:auto;font-size:14px;font-weight:650}.empty{font-size:14px;color:#737378}
+</style></head>
+<body>
+<header><div class="nav">診療点数</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div></header>
+<main>
+<section class="section">
+<div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="undo" class="linkbtn">1つ戻す</button></div>
+<div id="quick"></div>
+</section>
+<section class="section"><hr><div class="section-title"><h2>その他の処置</h2></div>
+<select id="otherSelect"><option value="">処置を選択してください</option></select>
+<div class="controls"><span class="caption">個数</span><button id="qminus" class="step">−</button><span id="quantity" class="count">1</span><button id="qplus" class="step">＋</button><button id="addOther" class="add" disabled>追加</button></div>
+</section>
+<section class="section"><hr><div class="section-title"><h2>今日の内訳</h2><div class="spacer"></div><button id="reset" class="linkbtn">リセット</button></div><div id="details"></div></section>
+</main>
+<script>
+const QUICK = [["初診", 1810], ["往診", 1420], ["点滴500ml", 2940], ["点滴1L", 3360], ["筋肉内注射", 350], ["皮下注射", 350], ["静脈内注射", 510], ["経口投薬", 660], ["洗浄（耳）", 1560], ["浣腸", 930], ["直腸検査", 1560], ["超音波検査", 1460], ["イソジン薬注", 3270], ["蹄病手術", 8160]];
+const OTHER = [["PLテスト", 550], ["血中ケトン", 780], ["細菌培養検査", 650], ["感受性ディスク検査", 1540], ["CG8", 2160], ["CHEM8", 2570], ["血液検査１項目", 390], ["血液生化学的検査（５種以上７種以下）", 1970], ["血液生化学的検査（８種又は９種）", 2380], ["血液生化学的検査（１０種以上）", 2770], ["糞便検査キット1種", 500], ["糞便検査キット2種", 630], ["糞便検査キット5種", 1150], ["洗浄（眼、涙管、鼻腔、膣、包皮、臍帯）", 550], ["洗浄（乳房内）", 850], ["薬浴 調剤を必要とするもの", 780], ["薬浴 調剤を必要としないもの", 830], ["鎮静術", 810], ["点滴2L", 3780], ["点滴3L", 4200], ["点滴4L", 4620], ["経口投薬 胃カテーテルによる投薬（ガス除去）（調剤）", 2130], ["塗布又は塗擦（水剤）", 540], ["塗布又は塗擦（育剤）", 550], ["穿胃", 2160], ["その他の外科的処置", 1260], ["その他の外科的処置（伸縮性接着包帯）", 1260], ["外傷治療 小 第１回", 1910], ["外傷治療 小 第２回以後", 930], ["外傷治療 大 第１回", 4680], ["外傷治療 大 第２回以後", 1910], ["外傷治療 小 第１回（伸縮性接着包帯）", 1910], ["外傷治療 小 第２回以後（伸縮性接着包帯）", 930], ["外傷治療 大 第１回（伸縮性接着包帯）", 4680], ["外傷治療 大 第２回以後（伸縮性接着包帯）", 1910], ["外傷治療（縫合加点）", 440], ["外傷治療（ギプス包帯加点）", 0], ["外傷治療（ギプス除去）", 1380], ["切開手術 小 第１回", 2710], ["切開手術 小 第２回以後", 1560], ["切開手術 大 第１回", 6370], ["切開手術 大 第２回以後", 2190], ["開腹（牛・馬）（帝王切開）", 77320], ["開腹（牛・馬）（第四胃変位整復手術）", 62050], ["開腹（牛・馬）（第四胃変位整復手術）（捻転整復）", 78300], ["蹄病処置（伸縮性接着包帯）", 5360], ["蹄病処置（蹄底ブロック又はギプス包帯加点）", 0], ["ナックル整復（ギプス包帯）", 5010]];
+const ALL = [...QUICK,...OTHER];
+const KEY="shinryo.web.entries.v1";
+let entries = JSON.parse(localStorage.getItem(KEY)||"[]");
+let quantity=1;
+const yen=n=>"¥"+Number(n).toLocaleString("ja-JP");
+const save=()=>localStorage.setItem(KEY,JSON.stringify(entries));
+const countFor=name=>entries.filter(e=>e.name===name).reduce((a,e)=>a+e.quantity,0);
+function add(name,point,q=1){entries.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,point,quantity:q,createdAt:new Date().toISOString()});save();render();}
+function removeOne(name){
+ let i=-1; for(let x=entries.length-1;x>=0;x--){if(entries[x].name===name){i=x;break}}
+ if(i<0)return;
+ if(entries[i].quantity<=1)entries.splice(i,1); else entries[i].quantity--;
+ save();render();
+}
+function render(){
+ document.getElementById("total").textContent=yen(entries.reduce((a,e)=>a+e.point*e.quantity,0));
+ document.getElementById("undo").disabled=!entries.length;
+ document.getElementById("reset").disabled=!entries.length;
+ document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${countFor(n)===0?"disabled":""}>−</button><div class="count">${countFor(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
+ document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{let t=QUICK.find(x=>x[0]===b.dataset.plus);add(t[0],t[1])});
+ document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeOne(b.dataset.minus));
+ const grouped=new Map();
+ entries.forEach(e=>{let g=grouped.get(e.name)||{quantity:0,subtotal:0};g.quantity+=e.quantity;g.subtotal+=e.point*e.quantity;grouped.set(e.name,g)});
+ let d=ALL.filter(([n])=>grouped.has(n)).map(([n])=>{let g=grouped.get(n);return `<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${g.quantity}</span><span class="money">${yen(g.subtotal)}</span></div>`}).join("");
+ document.getElementById("details").innerHTML=d||'<div class="empty">まだ処置はありません</div>';
+}
+const sel=document.getElementById("otherSelect");
+OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});
+sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
+document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
+document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
+document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let [n,p]=OTHER[Number(sel.value)];add(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
+document.getElementById("undo").onclick=()=>{if(entries.length){entries.pop();save();render()}};
+document.getElementById("reset").onclick=()=>{if(entries.length&&confirm("今日の入力をすべて削除しますか？")){entries=[];save();render()}};
+render();
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
+</script></body></html>
