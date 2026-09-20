@@ -78,7 +78,11 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   touch-action:manipulation;
 }
 </style>
-</head>
+<style>
+#mainView main{padding-bottom:118px}.ear-label{display:block;font-size:14px;color:#666;margin-bottom:7px;font-weight:600}.ear-input{width:100%;box-sizing:border-box;border:1px solid #c8c8cc;border-radius:12px;background:#fff;padding:12px 13px;font-size:18px;outline:none;-webkit-appearance:none}.ear-input:focus{border-color:#087ff5}
+.bottom-save-wrap{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:rgba(248,248,248,.96);border-top:1px solid #d9d9dd;display:flex;align-items:center;gap:10px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}.bottom-draft{min-width:84px;display:flex;flex-direction:column}.bottom-draft span{font-size:11px;color:#666}.bottom-draft strong{font-size:18px}.save-visit.bottom-save{flex:1;margin:0;min-height:50px}
+.today-visit-row{background:#fff;border-radius:13px;margin-bottom:9px;padding:11px 12px;display:flex;align-items:center;gap:10px}.today-visit-main{min-width:0;flex:1}.today-visit-title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.today-visit-sub{font-size:12px;color:#777;margin-top:3px}.today-visit-money{font-weight:750;white-space:nowrap}.today-visit-edit{border:0;border-radius:9px;background:#e9f3ff;color:#087ff5;padding:7px 10px;font-size:13px}
+</style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
@@ -87,6 +91,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
+<section class="section ear-section"><label class="ear-label" for="earTag">耳標</label><input id="earTag" class="ear-input" type="text" inputmode="numeric" placeholder="耳標番号を入力" autocomplete="off"></section>
 <section class="section">
 <div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="clearDraft" class="linkbtn">入力クリア</button></div>
 <div id="quick"></div>
@@ -96,10 +101,8 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div class="controls"><span class="caption">個数</span><button id="qminus" class="step">−</button><span id="quantity" class="count">1</span><button id="qplus" class="step">＋</button><button id="addOther" class="add" disabled>追加</button></div>
 </section>
 
-<div class="draft-total-card"><span class="draft-label">今回の診療</span><span id="draftTotal" class="draft-money">¥0</span></div>
-<button id="saveVisit" class="save-visit" disabled>この診療を保存</button>
-
-<section class="section"><hr><div class="section-title"><h2>今回の入力内容</h2></div><div id="details"></div></section>
+<section class="section"><hr><div class="section-title"><h2>今日の診療</h2></div><div id="todayVisits"></div></section>
+<div class="bottom-save-wrap"><div class="bottom-draft"><span>今回</span><strong id="draftTotal">¥0</strong></div><button id="saveVisit" class="save-visit bottom-save" disabled>この診療を保存</button></div>
 </main>
 </div>
 
@@ -151,7 +154,7 @@ if(!Object.keys(data).length){
   localStorage.setItem(KEY,JSON.stringify(data));
 }
 
-let draft=[]; let quantity=1; let editingVisitId=null;
+let draft=[]; let quantity=1; let editingVisitId=null; let earTag="";
 let shownMonth=new Date(); shownMonth.setDate(1);
 
 const saveData=()=>localStorage.setItem(KEY,JSON.stringify(data));
@@ -170,7 +173,7 @@ function removeDraft(name){
  for(let i=draft.length-1;i>=0;i--)if(draft[i].name===name){if(draft[i].quantity<=1)draft.splice(i,1);else draft[i].quantity--;break}
  renderMain();
 }
-function clearDraft(){draft=[];editingVisitId=null;renderMain()}
+function clearDraft(){draft=[];editingVisitId=null;earTag="";renderMain()}
 function renderMain(){
  document.getElementById("total").textContent=yen(dayTotal(todayKey()));
  document.getElementById("draftTotal").textContent=yen(totalItems(draft));
@@ -184,8 +187,10 @@ function renderMain(){
  document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${draftCount(n)===0?"disabled":""}>−</button><div class="count">${draftCount(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const t=QUICK.find(x=>x[0]===b.dataset.plus);addDraft(t[0],t[1])});
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeDraft(b.dataset.minus));
- const g=grouped(draft);
- document.getElementById("details").innerHTML=g.length?g.map(([n,x])=>`<div class="detail"><span class="detail-name">${n}</span><span class="qty">×${x.quantity}</span><span class="money">${yen(x.subtotal)}</span></div>`).join(""):'<div class="empty">まだ処置はありません</div>';
+ const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
+ const tv=visitsFor(todayKey());
+ document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?`耳標 ${v.earTag}`:`診療${i+1}`;return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${itemCount}処置</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
+ document.querySelectorAll("[data-today-edit]").forEach(b=>b.onclick=()=>editVisit(todayKey(),b.dataset.todayEdit));
 }
 
 function animateRevenue(from,to){
@@ -207,12 +212,13 @@ function saveVisit(){
  const k=todayKey(), beforeTotal=dayTotal(k), visits=visitsFor(k).slice();
  if(editingVisitId){
    const i=visits.findIndex(v=>v.id===editingVisitId);
-   if(i>=0)visits[i]={...visits[i],items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
+   if(i>=0)visits[i]={...visits[i],earTag:earTag.trim(),items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
  }else{
-   visits.push({id:uid(),createdAt:new Date().toISOString(),items:draft.map(e=>({...e,id:uid()}))});
+   visits.push({id:uid(),createdAt:new Date().toISOString(),earTag:earTag.trim(),items:draft.map(e=>({...e,id:uid()}))});
  }
  data[k]=visits; saveData(); draft=[]; editingVisitId=null;
  const afterTotal=dayTotal(k);
+ earTag="";
  renderMain();
  animateRevenue(beforeTotal,afterTotal);
 }
@@ -238,7 +244,7 @@ function openDay(k){
  const box=document.getElementById("dayDetails");
  box.innerHTML=visits.length?visits.map((v,i)=>{
    const g=grouped(v.items);
-   return `<div class="visit-card"><div class="visit-head"><span class="visit-title">診療${i+1}</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
+   return `<div class="visit-card"><div class="visit-head"><span class="visit-title">${v.earTag?`耳標 ${v.earTag}`:`診療${i+1}`}</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
    <div class="visit-items">${g.map(([n,x])=>`<div class="visit-item"><span class="vi-name">${n}</span><span class="vi-qty">×${x.quantity}</span><span class="vi-money">${yen(x.subtotal)}</span></div>`).join("")}</div>
    <div class="visit-actions"><button class="visit-edit" data-edit="${v.id}">編集</button><button class="visit-delete" data-delete="${v.id}">この診療を削除</button></div></div>`;
  }).join(""):'<div class="empty">この日の診療はありません</div>';
@@ -254,7 +260,7 @@ function editVisit(k,id){
  const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
  // Current-day visits can be edited through the main input screen.
  if(k===todayKey()){
-   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;renderMain();show("mainView");
+   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;earTag=v.earTag||"";renderMain();show("mainView");
  }else{
    // Keep past-date editing self-contained: +/- and delete on the visit.
    renderPastVisitEditor(k,id);
@@ -284,6 +290,7 @@ function deleteVisitItem(k,id,name){
  if(!v.items.length){deleteVisit(k,id);return}saveData();renderPastVisitEditor(k,id);
 }
 
+document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value});
 const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
 document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
