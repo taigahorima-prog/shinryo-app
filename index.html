@@ -216,22 +216,23 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   height:auto !important;
 }
 </style><style>
-/* v5.19: red delete surface follows deliberate left swipe */
-.summary-swipe-delete{
-  width:0 !important;
-  overflow:hidden !important;
-  border-radius:15px !important;
-  transition:width .18s ease,opacity .10s ease !important;
+/* v5.20: v5.18のスワイプ感を維持し、開いた時の赤背景だけカード全面に */
+.summary-swipe-wrap{
+  background:#ff3b30 !important;
 }
-.summary-swipe-wrap.open .summary-swipe-delete{
-  width:82px !important;
+.summary-swipe-wrap:not(.swipe-active):not(.open){
+  background:transparent !important;
+}
+.summary-swipe-wrap.swipe-active,
+.summary-swipe-wrap.open{
+  background:#ff3b30 !important;
 }
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.19</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.20</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -441,27 +442,15 @@ function setupSummarySwipeDelete(){
  const wraps=[...document.querySelectorAll(".summary-swipe-wrap")];
  wraps.forEach(w=>{
   const card=w.querySelector(".summary-visit-card");
-  const del=w.querySelector(".summary-swipe-delete");
   let sx=0,sy=0,dx=0,tracking=false,axis=null,base=0;
-  const INTENT=22,OPEN_AT=48,OPEN_X=-82,MAX_X=-150;
-
-  const setDeleteWidth=(px,animate=false)=>{
-   del.style.transition=animate?"width .18s ease, opacity .10s ease":"none";
-   del.style.width=`${Math.max(0,px)}px`;
-  };
+  const INTENT=22,OPEN_AT=48,OPEN_X=-82,MAX_X=-88;
 
   card.addEventListener("touchstart",e=>{
-   document.querySelectorAll(".summary-swipe-wrap.open").forEach(x=>{
-    if(x!==w){
-     x.classList.remove("open","swipe-active");
-     const d=x.querySelector(".summary-swipe-delete"); if(d)d.style.width="0px";
-    }
-   });
+   document.querySelectorAll(".summary-swipe-wrap.open").forEach(x=>{if(x!==w){x.classList.remove("open","swipe-active")}});
    sx=e.touches[0].clientX;sy=e.touches[0].clientY;
    base=w.classList.contains("open")?OPEN_X:0;
    dx=base;tracking=true;axis=null;
    card.style.transition="none";
-   if(base<0)setDeleteWidth(Math.abs(base));
   },{passive:true});
 
   card.addEventListener("touchmove",e=>{
@@ -471,24 +460,21 @@ function setupSummarySwipeDelete(){
    if(!axis){
     if(Math.abs(rawX)<INTENT && Math.abs(rawY)<INTENT)return;
     if(Math.abs(rawY)>Math.abs(rawX)*1.15){
-     axis="y";tracking=false;card.style.transition="";
-     return;
+      axis="y";tracking=false;card.style.transition="";return;
     }
     axis="x";
    }
    if(axis!=="x")return;
 
    e.preventDefault();
-   let target=Math.max(MAX_X,Math.min(0,base+rawX));
+   let target=base+rawX;
+   target=Math.max(MAX_X,Math.min(0,target));
    dx=target;
 
-   if(Math.abs(target)>=INTENT || base<0){
-    w.classList.add("swipe-active");
-    setDeleteWidth(Math.abs(target));
-   }else{
-    w.classList.remove("swipe-active");
-    setDeleteWidth(0);
-   }
+   // Reveal red only after a deliberate horizontal swipe.
+   if(Math.abs(target)>=INTENT || base<0)w.classList.add("swipe-active");
+   else w.classList.remove("swipe-active");
+
    card.style.transform=`translateX(${target}px)`;
   },{passive:false});
 
@@ -499,16 +485,13 @@ function setupSummarySwipeDelete(){
     const shouldOpen=dx<=-OPEN_AT;
     w.classList.toggle("open",shouldOpen);
     w.classList.toggle("swipe-active",shouldOpen);
-    setDeleteWidth(shouldOpen?82:0,true);
    }
    tracking=false;axis=null;
   });
 
   card.addEventListener("touchcancel",()=>{
    card.style.transition="";card.style.transform="";
-   const opened=w.classList.contains("open");
-   w.classList.toggle("swipe-active",opened);
-   setDeleteWidth(opened?82:0,true);
+   if(!w.classList.contains("open"))w.classList.remove("swipe-active");
    tracking=false;axis=null;
   });
  });
