@@ -284,7 +284,7 @@ function renderSummary(){
  for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
  renderSelectedDay();
 }
-let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null; let editOrigin="main";
+let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null;
 function selectSummaryDay(k){
  selectedSummaryDay=k;
  renderSummary();
@@ -358,13 +358,14 @@ function deleteVisitItem(k,id,name){
 
 function cancelCurrentEdit(){
  if(!editingVisitId)return;
+ const goBackToSummary=returnToSummaryAfterEdit;
  draft=[];editingVisitId=null;earTag="";farmerName="";quantity=1;
  const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
  const qtyEl=document.getElementById("quantity");if(qtyEl)qtyEl.textContent="1";
  const addBtn=document.getElementById("addOther");if(addBtn)addBtn.disabled=true;
- const origin=editOrigin;editOrigin="main";returnToSummaryAfterEdit=false;
+ returnToSummaryAfterEdit=false;
  renderMain();
- if(origin==="summary"){renderSummary();show("summaryView")}else show("mainView");
+ if(goBackToSummary){renderSummary();show("summaryView")}else{show("mainView")}
 }
 
 document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value});
