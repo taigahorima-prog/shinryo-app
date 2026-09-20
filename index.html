@@ -102,6 +102,10 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .summary-month-revenue{margin:12px 0 20px;padding:0 2px}
 .summary-month-revenue .label{font-size:16px;color:#6e6e73;margin-bottom:4px}
 .summary-month-total{font-size:48px;line-height:1.05;font-weight:800;letter-spacing:-1.5px}
+</style><style>
+.other-draft-list{margin-top:10px}.other-draft-title{font-size:12px;color:#777;margin:0 3px 5px}
+.other-draft-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:9px 11px;margin-top:6px;font-size:14px}
+.other-draft-row span{flex:1;min-width:0}.other-draft-row strong{white-space:nowrap;font-size:14px}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -124,6 +128,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <section class="section"><hr><div class="section-title"><h2>その他の処置</h2></div>
 <select id="otherSelect"><option value="">処置を選択してください</option></select>
 <div class="controls"><span class="caption">個数</span><button id="qminus" class="step">−</button><span id="quantity" class="count">1</span><button id="qplus" class="step">＋</button><button id="addOther" class="add" disabled>追加</button></div>
+<div id="otherDraftList" class="other-draft-list"></div>
 </section>
 
 <section class="section"><hr><div class="section-title"><h2>今日の診療</h2></div><div id="todayVisits"></div></section>
@@ -210,6 +215,9 @@ function renderMain(){
  document.getElementById("quick").innerHTML=QUICK.map(([n,p])=>`<div class="row"><div class="info"><div class="name">${n}</div><div class="price">${yen(p)}</div></div><button class="step" data-minus="${n}" ${draftCount(n)===0?"disabled":""}>−</button><div class="count">${draftCount(n)}</div><button class="step plus" data-plus="${n}">＋</button></div>`).join("");
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const t=QUICK.find(x=>x[0]===b.dataset.plus);addDraft(t[0],t[1])});
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeDraft(b.dataset.minus));
+ const otherNames=new Set(OTHER.map(x=>x[0]));
+ const otherDraft=grouped(draft).filter(([n])=>otherNames.has(n));
+ document.getElementById("otherDraftList").innerHTML=otherDraft.length?`<div class="other-draft-title">追加した処置</div>`+otherDraft.map(([n,x])=>`<div class="other-draft-row"><span>${n}</span><strong>×${x.quantity}</strong></div>`).join(""):"";
  const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
  const farmer=document.getElementById("farmerName");if(document.activeElement!==farmer)farmer.value=farmerName;
  const tv=visitsFor(todayKey());
@@ -242,7 +250,10 @@ function saveVisit(){
  }
  data[k]=visits; saveData(); draft=[]; editingVisitId=null;
  const afterTotal=dayTotal(k);
- earTag="";farmerName="";
+ earTag="";farmerName="";quantity=1;
+ const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
+ const qtyEl=document.getElementById("quantity");if(qtyEl)qtyEl.textContent="1";
+ const addBtn=document.getElementById("addOther");if(addBtn)addBtn.disabled=true;
  renderMain();
  animateRevenue(beforeTotal,afterTotal);
  if(returnToSummaryAfterEdit){
