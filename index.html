@@ -238,12 +238,54 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   margin-top:8px !important;
   margin-bottom:12px !important;
 }
+</style><style>
+/* v5.24 */
+#summaryView{position:relative}
+
+/* 集計画面の戻る：左上に浮かせて常時表示 */
+#summaryView .back-btn{
+  position:fixed !important;
+  top:max(58px, calc(env(safe-area-inset-top) + 12px)) !important;
+  left:18px !important;
+  z-index:1000 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:auto !important;
+  min-width:82px !important;
+  height:44px !important;
+  padding:0 14px !important;
+  margin:0 !important;
+  border:1px solid rgba(0,122,255,.18) !important;
+  border-radius:14px !important;
+  background:rgba(246,250,255,.92) !important;
+  box-shadow:0 3px 14px rgba(0,0,0,.06) !important;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+
+/* ホームの三本線：少し大きい独立ボタンに */
+#menuButton:not(.cancel-mode){
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:54px !important;
+  height:48px !important;
+  padding:0 !important;
+  border:1px solid rgba(0,122,255,.16) !important;
+  border-radius:15px !important;
+  background:#eef6ff !important;
+  color:#2684f5 !important;
+  font-size:30px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.23</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.24</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
