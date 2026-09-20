@@ -108,6 +108,9 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .other-draft-row span{flex:1;min-width:0}.other-draft-row strong{white-space:nowrap;font-size:14px}
 </style><style>
 .other-draft-delete{border:0;border-radius:8px;background:#ededf0;color:#d70015;padding:6px 9px;font-size:12px;white-space:nowrap;touch-action:manipulation}
+</style><style>
+/* v4.0 */
+.summary-btn.cancel-mode{color:#d70015}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -209,6 +212,9 @@ function renderMain(){
  document.getElementById("draftTotal").textContent=yen(totalItems(draft));
  document.getElementById("saveVisit").disabled=!draft.length;
  document.getElementById("saveVisit").textContent=editingVisitId?"この診療を更新":"この診療を保存";
+ const topBtn=document.getElementById("openSummary");
+ topBtn.textContent=editingVisitId?"キャンセル":"集計";
+ topBtn.classList.toggle("cancel-mode",!!editingVisitId);
  document.getElementById("clearDraft").disabled=!draft.length&&!editingVisitId;
  const banner=document.getElementById("editingBanner");
  if(editingVisitId){banner.classList.add("active");banner.textContent="保存済みの診療を編集中です。更新すると元の診療に上書きされます。"}
@@ -251,7 +257,7 @@ function saveVisit(){
  }else{
    visits.push({id:uid(),createdAt:new Date().toISOString(),earTag:earTag.trim(),farmerName:farmerName.trim(),items:draft.map(e=>({...e,id:uid()}))});
  }
- data[k]=visits; saveData(); draft=[]; editingVisitId=null;
+ data[k]=visits; saveData(); draft=[]; editingVisitId=null; editOrigin="main";
  const afterTotal=dayTotal(k);
  earTag="";farmerName="";quantity=1;
  const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
@@ -278,7 +284,7 @@ function renderSummary(){
  for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
  renderSelectedDay();
 }
-let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null;
+let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null; let editOrigin="main";
 function selectSummaryDay(k){
  selectedSummaryDay=k;
  renderSummary();
@@ -350,6 +356,17 @@ function deleteVisitItem(k,id,name){
  if(!v.items.length){deleteVisit(k,id);return}saveData();renderPastVisitEditor(k,id);
 }
 
+function cancelCurrentEdit(){
+ if(!editingVisitId)return;
+ draft=[];editingVisitId=null;earTag="";farmerName="";quantity=1;
+ const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
+ const qtyEl=document.getElementById("quantity");if(qtyEl)qtyEl.textContent="1";
+ const addBtn=document.getElementById("addOther");if(addBtn)addBtn.disabled=true;
+ const origin=editOrigin;editOrigin="main";returnToSummaryAfterEdit=false;
+ renderMain();
+ if(origin==="summary"){renderSummary();show("summaryView")}else show("mainView");
+}
+
 document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value});
 document.getElementById("farmerName").addEventListener("input",e=>{farmerName=e.target.value});
 const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
@@ -358,7 +375,10 @@ document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);d
 document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let[n,p]=OTHER[Number(sel.value)];addDraft(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
 document.getElementById("clearDraft").onclick=()=>{if((draft.length||editingVisitId)&&confirm("今回の入力をクリアしますか？"))clearDraft()};
 document.getElementById("saveVisit").onclick=saveVisit;
-document.getElementById("openSummary").onclick=()=>{const now=new Date();shownMonth=new Date(now.getFullYear(),now.getMonth(),1);selectedSummaryDay=todayKey();renderSummary();show("summaryView")};
+document.getElementById("openSummary").onclick=()=>{
+ if(editingVisitId){cancelCurrentEdit();return}
+ const now=new Date();shownMonth=new Date(now.getFullYear(),now.getMonth(),1);selectedSummaryDay=todayKey();renderSummary();show("summaryView")
+};
 document.getElementById("closeSummary").onclick=()=>show("mainView");
 document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);selectedSummaryDay=null;renderSummary()};
