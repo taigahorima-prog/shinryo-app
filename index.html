@@ -156,12 +156,16 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 #calendar .day.today{background:#e1e7ef !important}
 #calendar .day.selected{background:#fff !important;box-shadow:inset 0 0 0 3px #087ff5 !important}
 #calendar .day.today.selected{background:#e1e7ef !important;box-shadow:inset 0 0 0 3px #087ff5 !important}
+</style><style>
+/* v5.11: calendar-date entry mode */
+.calendar-date-entry #todayVisitsSection{display:none !important}
+.calendar-date-entry #total{display:none !important}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.10</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.12</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -182,7 +186,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="otherDraftList" class="other-draft-list"></div>
 </section>
 
-<section class="section"><hr><div class="section-title"><h2>今日の診療</h2></div><div id="todayVisits"></div></section>
+<section id="todayVisitsSection" class="section"><hr><div class="section-title"><h2>今日の診療</h2></div><div id="todayVisits"></div></section>
 <div class="bottom-save-wrap"><div class="bottom-draft"><span>今回</span><strong id="draftTotal">¥0</strong></div><button id="saveVisit" class="save-visit bottom-save" disabled>この診療を保存</button></div>
 </main>
 </div>
@@ -271,6 +275,13 @@ function renderMain(){
  document.getElementById("draftTotal").textContent=yen(totalItems(draft));
  document.getElementById("saveVisit").disabled=!draft.length;
  document.getElementById("saveVisit").textContent=editingVisitId?"この診療を更新":"この診療を保存";
+ const entryDate=(returnToSummaryAfterEdit&&viewingDay)?viewingDay:todayKey();
+ const isCalendarDateEntry=!!(returnToSummaryAfterEdit&&viewingDay&&viewingDay!==todayKey()&&!editingVisitId);
+ document.body.classList.toggle("calendar-date-entry",isCalendarDateEntry);
+ const revenueLabel=document.getElementById("revenueLabel");
+ if(revenueLabel)revenueLabel.textContent=isCalendarDateEntry?`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を追加`:"本日の収益";
+ const totalEl=document.getElementById("total");
+ if(totalEl&&isCalendarDateEntry)totalEl.textContent=yen(dayTotal(entryDate));
  const topBtn=document.getElementById("menuButton");
  topBtn.textContent=editingVisitId?"キャンセル":"☰";
  topBtn.classList.toggle("cancel-mode",!!editingVisitId);
