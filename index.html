@@ -401,12 +401,17 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .today-swipe-wrap .summary-swipe-delete{
   border-radius:0 14px 14px 0 !important;
 }
+</style><style>
+/* v5.34: 月間収益の補助指標 */
+.summary-month-metrics{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.summary-month-metric{font-size:14px;color:#6e6e73}
+.summary-month-metric strong{color:#111;font-weight:700}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.33</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.34</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -446,7 +451,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="summaryView" class="view">
 <main>
 <button id="closeSummary" class="backbtn">‹ 戻る</button>
-<div class="summary-month-revenue"><div class="label">今月の収益</div><div id="fixedMonthTotal" class="summary-month-total">¥0</div></div>
+<div class="summary-month-revenue"><div class="label">今月の収益</div><div id="fixedMonthTotal" class="summary-month-total">¥0</div><div class="summary-month-metrics"><div class="summary-month-metric">1診療日平均　<strong id="avgWorkdayRevenue">¥0</strong></div><div class="summary-month-metric">予測年収　<strong id="projectedAnnualIncome">¥0</strong></div></div></div>
 <div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
 <div id="calendar" class="calendar"></div><div id="selectedDayPanel" class="selected-day-panel"></div>
 
@@ -615,6 +620,11 @@ function renderSummary(){
  const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(data).filter(k=>k.startsWith(prefix)&&visitsFor(k).length).sort();
  const totals=keys.map(k=>[k,dayTotal(k)]),mt=totals.reduce((a,x)=>a+x[1],0);
  document.getElementById("fixedMonthTotal").textContent=yen(mt);
+  const workdays=totals.filter(([,amount])=>amount>0).length;
+  const avgWorkday=workdays?Math.round(mt/workdays):0;
+  const projectedAnnual=workdays?Math.max(0,avgWorkday-15000)*300:0;
+  document.getElementById("avgWorkdayRevenue").textContent=yen(avgWorkday);
+  document.getElementById("projectedAnnualIncome").textContent=yen(projectedAnnual);
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
