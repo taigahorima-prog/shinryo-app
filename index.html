@@ -133,7 +133,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.4</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.7</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -331,7 +331,7 @@ function renderSelectedDay(){
  const visits=visitsFor(selectedSummaryDay);
  const title=`<div class="selected-day-title">${Number(selectedSummaryDay.slice(5,7))}月${Number(selectedSummaryDay.slice(8,10))}日の診療</div>`;
  const cards=visits.length?visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div>`}).join(""):"";
- box.innerHTML=title+cards+'<div class="day-add-wrap"><button id="addVisitFromSummary" class="day-add-button">診療を追加</button></div>';
+ box.innerHTML=title+cards+'<div class="day-add-wrap"><button id="addVisitFromSummary" class="day-add-button"><span class="day-add-plus">＋</span><span class="day-add-label">診療を追加</span></button></div>';
  box.querySelectorAll("[data-summary-edit]").forEach(b=>b.onclick=()=>editVisit(selectedSummaryDay,b.dataset.summaryEdit,true));
  document.getElementById("addVisitFromSummary").onclick=()=>startVisitForDay(selectedSummaryDay);
 }
