@@ -118,20 +118,31 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .master-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:10px 0}.master-edit-toggle,.master-add{border:0;border-radius:10px;font-weight:650}.master-edit-toggle{padding:9px 15px;background:#e9f3ff;color:#087ff5}.master-edit-toggle.active{background:#087ff5;color:#fff}.master-add{width:40px;height:40px;background:#087ff5;color:#fff;font-size:25px}
 .master-row.editing{display:flex;align-items:center;gap:7px}.master-row-content{flex:1;min-width:0}.master-drag{display:none;color:#999;font-size:21px;width:28px;text-align:center;touch-action:none;user-select:none;-webkit-user-select:none}.master-row.editing .master-drag{display:block}.master-row-actions{display:none;gap:5px}.master-row.editing .master-row-actions{display:flex}.master-row-edit,.master-row-delete{border:0;border-radius:8px;padding:7px 8px;font-size:12px}.master-row-edit{background:#e9f3ff;color:#087ff5}.master-row-delete{background:#ededf0;color:#d70015}.master-row.dragging{opacity:.45}.master-row.drag-over{border-top:3px solid #087ff5}
 .master-modal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.35);padding:20px;align-items:center;justify-content:center}.master-modal.active{display:flex}.master-modal-card{width:min(100%,460px);background:#fff;border-radius:17px;padding:18px}.master-modal-title{font-size:21px;font-weight:800;margin-bottom:15px}.master-field-label{display:block;font-size:13px;color:#666;margin:11px 0 6px}.master-field-input{width:100%;min-height:48px;border:1px solid #c8c8cc;border-radius:11px;background:#fff;padding:10px 12px;font-size:16px}.master-modal-actions{display:flex;gap:9px;margin-top:18px}.master-modal-actions button{flex:1;min-height:46px;border:0;border-radius:11px;font-weight:650}.master-modal-actions button:first-child{background:#ededf0}.master-modal-actions .primary{background:#087ff5;color:#fff}
+</style><style>
+/* v5.4: revisit lookup */
+.revisit-input-row{display:flex;gap:8px;align-items:stretch}
+.revisit-input-row .ear-input{flex:1;min-width:0}
+.revisit-button{min-width:74px;border:0;border-radius:12px;background:#e9f3ff;color:#087ff5;font-size:16px;font-weight:700;padding:0 14px;touch-action:manipulation}
+.revisit-candidates{display:none;margin-top:8px;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e5e8}
+.revisit-candidates.active{display:block}
+.revisit-choice{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:12px 13px;text-align:left;display:flex;align-items:center;gap:8px;font-size:15px}
+.revisit-choice:last-child{border-bottom:0}.revisit-choice-name{font-weight:650;flex:1}.revisit-choice-date{font-size:12px;color:#777}
+.revisit-message{padding:11px 13px;font-size:13px;color:#777}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.3</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.4</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
 <section class="section ear-section">
-<label class="ear-label" for="farmerName">農家名</label>
+<label class="ear-label" for="earTag">耳標</label>
+<div class="revisit-input-row"><input id="earTag" class="ear-input" type="text" inputmode="numeric" placeholder="耳標番号を入力" autocomplete="off"><button id="revisitButton" class="revisit-button">再診</button></div>
+<div id="revisitCandidates" class="revisit-candidates"></div>
+<label class="ear-label second-label" for="farmerName">農家名</label>
 <input id="farmerName" class="ear-input" type="text" placeholder="農家名を入力" autocomplete="off">
-<label class="ear-label second-label" for="earTag">耳標</label>
-<input id="earTag" class="ear-input" type="text" inputmode="numeric" placeholder="耳標番号を入力" autocomplete="off">
 </section>
 <section class="section">
 <div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="clearDraft" class="linkbtn">入力クリア</button></div>
@@ -388,7 +399,44 @@ function cancelCurrentEdit(){
  if(goBackToSummary){renderSummary();show("summaryView")}else{show("mainView")}
 }
 
-document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value});
+
+function revisitMatches(tag){
+ const wanted=String(tag||"").trim();if(!wanted)return [];
+ const now=new Date(),cutoff=new Date(now.getTime()-30*24*60*60*1000);
+ const byFarmer=new Map();
+ Object.keys(data).forEach(k=>{
+  const day=new Date(k+"T00:00:00");
+  if(day<cutoff||day>now)return;
+  visitsFor(k).forEach(v=>{
+   if(String(v.earTag||"").trim()!==wanted)return;
+   const name=String(v.farmerName||"").trim();if(!name)return;
+   const prev=byFarmer.get(name);
+   if(!prev||k>prev.date)byFarmer.set(name,{farmerName:name,date:k});
+  });
+ });
+ return [...byFarmer.values()].sort((a,b)=>b.date.localeCompare(a.date));
+}
+function closeRevisitCandidates(){
+ const box=document.getElementById("revisitCandidates");box.classList.remove("active");box.innerHTML="";
+}
+function chooseRevisitFarmer(name){
+ farmerName=name;
+ const input=document.getElementById("farmerName");input.value=name;
+ closeRevisitCandidates();
+}
+function lookupRevisit(){
+ const tag=document.getElementById("earTag").value.trim(),box=document.getElementById("revisitCandidates");
+ earTag=tag;
+ if(!tag){box.innerHTML='<div class="revisit-message">耳標番号を入力してください</div>';box.classList.add("active");return}
+ const matches=revisitMatches(tag);
+ if(!matches.length){box.innerHTML='<div class="revisit-message">30日以内に同じ耳標の診療記録はありません</div>';box.classList.add("active");return}
+ if(matches.length===1){chooseRevisitFarmer(matches[0].farmerName);return}
+ box.innerHTML='<div class="revisit-message">同じ耳標の記録があります。農家名を選択してください。</div>'+matches.map((x,i)=>`<button class="revisit-choice" data-revisit-index="${i}"><span class="revisit-choice-name">${escapeHtml(x.farmerName)}</span><span class="revisit-choice-date">${Number(x.date.slice(5,7))}/${Number(x.date.slice(8,10))}</span></button>`).join("");
+ box.classList.add("active");
+ box.querySelectorAll("[data-revisit-index]").forEach(b=>b.onclick=()=>chooseRevisitFarmer(matches[Number(b.dataset.revisitIndex)].farmerName));
+}
+document.getElementById("revisitButton").onclick=lookupRevisit;
+document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value;closeRevisitCandidates()});
 document.getElementById("farmerName").addEventListener("input",e=>{farmerName=e.target.value});
 const sel=document.getElementById("otherSelect");function rebuildOtherSelect(){sel.innerHTML='<option value="">処置を選択してください</option>';OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.value="";document.getElementById("addOther").disabled=true} rebuildOtherSelect();sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
