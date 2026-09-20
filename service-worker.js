@@ -1,4 +1,4 @@
-const CACHE="shinryo-pwa-v5.31";
+const CACHE="shinryo-pwa-v5.32";
 const ASSETS=["./","./index.html","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
 self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
