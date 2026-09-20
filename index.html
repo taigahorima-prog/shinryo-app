@@ -82,6 +82,13 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 #mainView main{padding-bottom:118px}.ear-label{display:block;font-size:14px;color:#666;margin-bottom:7px;font-weight:600}.ear-input{width:100%;box-sizing:border-box;border:1px solid #c8c8cc;border-radius:12px;background:#fff;padding:12px 13px;font-size:18px;outline:none;-webkit-appearance:none}.ear-input:focus{border-color:#087ff5}
 .bottom-save-wrap{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:rgba(248,248,248,.96);border-top:1px solid #d9d9dd;display:flex;align-items:center;gap:10px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}.bottom-draft{min-width:84px;display:flex;flex-direction:column}.bottom-draft span{font-size:11px;color:#666}.bottom-draft strong{font-size:18px}.save-visit.bottom-save{flex:1;margin:0;min-height:50px}
 .today-visit-row{background:#fff;border-radius:13px;margin-bottom:9px;padding:11px 12px;display:flex;align-items:center;gap:10px}.today-visit-main{min-width:0;flex:1}.today-visit-title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.today-visit-sub{font-size:12px;color:#777;margin-top:3px}.today-visit-money{font-weight:750;white-space:nowrap}.today-visit-edit{border:0;border-radius:9px;background:#e9f3ff;color:#087ff5;padding:7px 10px;font-size:13px}
+</style><style>
+.second-label{margin-top:12px}
+.today-visit-title{font-size:19px}
+.selected-day-panel{margin:12px 0 18px}
+.selected-day-title{font-size:17px;font-weight:750;margin:12px 2px 9px}
+.summary-visit-card{background:#fff;border-radius:13px;margin-bottom:9px;padding:11px 12px;display:flex;align-items:center;gap:10px}
+.summary-visit-info{flex:1;min-width:0}.summary-ear{font-size:20px;font-weight:800}.summary-farmer{font-size:13px;color:#555;margin-top:2px}.summary-items{font-size:11px;color:#777;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summary-visit-money{font-weight:750;white-space:nowrap}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -91,7 +98,12 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
-<section class="section ear-section"><label class="ear-label" for="earTag">耳標</label><input id="earTag" class="ear-input" type="text" inputmode="numeric" placeholder="耳標番号を入力" autocomplete="off"></section>
+<section class="section ear-section">
+<label class="ear-label" for="farmerName">農家名</label>
+<input id="farmerName" class="ear-input" type="text" placeholder="農家名を入力" autocomplete="off">
+<label class="ear-label second-label" for="earTag">耳標</label>
+<input id="earTag" class="ear-input" type="text" inputmode="numeric" placeholder="耳標番号を入力" autocomplete="off">
+</section>
 <section class="section">
 <div class="section-title"><h2>よく使う処置</h2><div class="spacer"></div><button id="clearDraft" class="linkbtn">入力クリア</button></div>
 <div id="quick"></div>
@@ -110,7 +122,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <main>
 <button id="closeSummary" class="backbtn">‹ 戻る</button>
 <div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
-<div id="calendar" class="calendar"></div>
+<div id="calendar" class="calendar"></div><div id="selectedDayPanel" class="selected-day-panel"></div>
 <div class="stats"><div class="label">この月の収益</div><div id="monthTotal" class="stats-total">¥0</div>
 <div class="statline"><span>診療日数</span><strong id="workDays">0日</strong></div>
 <div class="statline"><span>1日平均</span><strong id="dayAverage">¥0</strong></div></div>
@@ -154,7 +166,7 @@ if(!Object.keys(data).length){
   localStorage.setItem(KEY,JSON.stringify(data));
 }
 
-let draft=[]; let quantity=1; let editingVisitId=null; let earTag="";
+let draft=[]; let quantity=1; let editingVisitId=null; let earTag=""; let farmerName="";
 let shownMonth=new Date(); shownMonth.setDate(1);
 
 const saveData=()=>localStorage.setItem(KEY,JSON.stringify(data));
@@ -173,7 +185,7 @@ function removeDraft(name){
  for(let i=draft.length-1;i>=0;i--)if(draft[i].name===name){if(draft[i].quantity<=1)draft.splice(i,1);else draft[i].quantity--;break}
  renderMain();
 }
-function clearDraft(){draft=[];editingVisitId=null;earTag="";renderMain()}
+function clearDraft(){draft=[];editingVisitId=null;earTag="";farmerName="";returnToSummaryAfterEdit=false;renderMain()}
 function renderMain(){
  document.getElementById("total").textContent=yen(dayTotal(todayKey()));
  document.getElementById("draftTotal").textContent=yen(totalItems(draft));
@@ -188,8 +200,9 @@ function renderMain(){
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const t=QUICK.find(x=>x[0]===b.dataset.plus);addDraft(t[0],t[1])});
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeDraft(b.dataset.minus));
  const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
+ const farmer=document.getElementById("farmerName");if(document.activeElement!==farmer)farmer.value=farmerName;
  const tv=visitsFor(todayKey());
- document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?`耳標 ${v.earTag}`:`診療${i+1}`;return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${itemCount}処置</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
+ document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?v.earTag:`診療${i+1}`;const sub=[v.farmerName,`${itemCount}処置`].filter(Boolean).join(" ・ ");return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${sub}</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
  document.querySelectorAll("[data-today-edit]").forEach(b=>b.onclick=()=>editVisit(todayKey(),b.dataset.todayEdit));
 }
 
@@ -212,15 +225,20 @@ function saveVisit(){
  const k=todayKey(), beforeTotal=dayTotal(k), visits=visitsFor(k).slice();
  if(editingVisitId){
    const i=visits.findIndex(v=>v.id===editingVisitId);
-   if(i>=0)visits[i]={...visits[i],earTag:earTag.trim(),items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
+   if(i>=0)visits[i]={...visits[i],earTag:earTag.trim(),farmerName:farmerName.trim(),items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
  }else{
-   visits.push({id:uid(),createdAt:new Date().toISOString(),earTag:earTag.trim(),items:draft.map(e=>({...e,id:uid()}))});
+   visits.push({id:uid(),createdAt:new Date().toISOString(),earTag:earTag.trim(),farmerName:farmerName.trim(),items:draft.map(e=>({...e,id:uid()}))});
  }
  data[k]=visits; saveData(); draft=[]; editingVisitId=null;
  const afterTotal=dayTotal(k);
- earTag="";
+ earTag="";farmerName="";
  renderMain();
  animateRevenue(beforeTotal,afterTotal);
+ if(returnToSummaryAfterEdit){
+   returnToSummaryAfterEdit=false;
+   renderSummary();
+   show("summaryView");
+ }
 }
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0)}
 
@@ -232,11 +250,28 @@ function renderSummary(){
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
- for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>openDay(k);cal.appendChild(b)}
+ for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
  const list=document.getElementById("dailyList");list.innerHTML=totals.length?totals.slice().reverse().map(([k,a])=>`<button class="daily-row" data-day="${k}"><span class="date">${Number(k.slice(5,7))}/${Number(k.slice(8,10))}</span><span class="amount">${yen(a)}</span></button>`).join(""):'<div class="empty" style="padding:14px">この月の記録はありません</div>';
- list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
+ list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>selectSummaryDay(b.dataset.day));
+ renderSelectedDay();
 }
-let viewingDay=null;
+let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null;
+function selectSummaryDay(k){
+ selectedSummaryDay=k;
+ renderSummary();
+ setTimeout(()=>document.getElementById("selectedDayPanel")?.scrollIntoView({behavior:"smooth",block:"nearest"}),0);
+}
+function renderSelectedDay(){
+ const box=document.getElementById("selectedDayPanel"); if(!box)return;
+ if(!selectedSummaryDay){box.innerHTML="";return}
+ const y=shownMonth.getFullYear(),m=shownMonth.getMonth();
+ if(!selectedSummaryDay.startsWith(`${y}-${pad(m+1)}-`)){selectedSummaryDay=null;box.innerHTML="";return}
+ const visits=visitsFor(selectedSummaryDay);
+ if(!visits.length){box.innerHTML="";return}
+ box.innerHTML=`<div class="selected-day-title">${Number(selectedSummaryDay.slice(5,7))}月${Number(selectedSummaryDay.slice(8,10))}日の診療</div>`+
+ visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div>`}).join("");
+ box.querySelectorAll("[data-summary-edit]").forEach(b=>b.onclick=()=>editVisit(selectedSummaryDay,b.dataset.summaryEdit,true));
+}
 function openDay(k){
  viewingDay=k;const visits=visitsFor(k);
  document.getElementById("dayTitle").textContent=`${Number(k.slice(0,4))}年${Number(k.slice(5,7))}月${Number(k.slice(8,10))}日`;
@@ -244,7 +279,7 @@ function openDay(k){
  const box=document.getElementById("dayDetails");
  box.innerHTML=visits.length?visits.map((v,i)=>{
    const g=grouped(v.items);
-   return `<div class="visit-card"><div class="visit-head"><span class="visit-title">${v.earTag?`耳標 ${v.earTag}`:`診療${i+1}`}</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
+   return `<div class="visit-card"><div class="visit-head"><span class="visit-title">${v.earTag?v.earTag:`診療${i+1}`}</span><span class="visit-sum">${yen(totalItems(v.items))}</span></div>
    <div class="visit-items">${g.map(([n,x])=>`<div class="visit-item"><span class="vi-name">${n}</span><span class="vi-qty">×${x.quantity}</span><span class="vi-money">${yen(x.subtotal)}</span></div>`).join("")}</div>
    <div class="visit-actions"><button class="visit-edit" data-edit="${v.id}">編集</button><button class="visit-delete" data-delete="${v.id}">この診療を削除</button></div></div>`;
  }).join(""):'<div class="empty">この日の診療はありません</div>';
@@ -256,14 +291,16 @@ function deleteVisit(k,id){
  if(!confirm("この診療1件を削除しますか？"))return;
  const vs=visitsFor(k).filter(v=>v.id!==id); if(vs.length)data[k]=vs;else delete data[k];saveData();openDay(k);
 }
-function editVisit(k,id){
+function editVisit(k,id,fromSummary=false){
  const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
  // Current-day visits can be edited through the main input screen.
  if(k===todayKey()){
-   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;earTag=v.earTag||"";renderMain();show("mainView");
+   returnToSummaryAfterEdit=fromSummary||document.getElementById("dayView").classList.contains("active");
+   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;earTag=v.earTag||"";farmerName=v.farmerName||"";renderMain();show("mainView");
  }else{
-   // Keep past-date editing self-contained: +/- and delete on the visit.
+   returnToSummaryAfterEdit=fromSummary;
    renderPastVisitEditor(k,id);
+   show("dayView");
  }
 }
 function renderPastVisitEditor(k,id){
@@ -277,7 +314,7 @@ function renderPastVisitEditor(k,id){
  box.querySelectorAll("[data-vminus]").forEach(b=>b.onclick=()=>changeVisitItem(k,id,b.dataset.vminus,-1));
  box.querySelectorAll("[data-vplus]").forEach(b=>b.onclick=()=>changeVisitItem(k,id,b.dataset.vplus,1));
  box.querySelectorAll("[data-vdelete]").forEach(b=>b.onclick=()=>deleteVisitItem(k,id,b.dataset.vdelete));
- document.getElementById("donePastEdit").onclick=()=>openDay(k);
+ document.getElementById("donePastEdit").onclick=()=>{if(returnToSummaryAfterEdit){returnToSummaryAfterEdit=false;renderSummary();show("summaryView")}else openDay(k)};
 }
 function changeVisitItem(k,id,name,delta){
  const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
@@ -291,6 +328,7 @@ function deleteVisitItem(k,id,name){
 }
 
 document.getElementById("earTag").addEventListener("input",e=>{earTag=e.target.value});
+document.getElementById("farmerName").addEventListener("input",e=>{farmerName=e.target.value});
 const sel=document.getElementById("otherSelect");OTHER.forEach(([n,p],i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${n}　+${p.toLocaleString("ja-JP")}`;sel.appendChild(o)});sel.onchange=()=>document.getElementById("addOther").disabled=sel.value==="";
 document.getElementById("qminus").onclick=()=>{quantity=Math.max(1,quantity-1);document.getElementById("quantity").textContent=quantity};
 document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);document.getElementById("quantity").textContent=quantity};
@@ -300,8 +338,8 @@ document.getElementById("saveVisit").onclick=saveVisit;
 document.getElementById("openSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("closeSummary").onclick=()=>show("mainView");
 document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
-document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);renderSummary()};
-document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);renderSummary()};
+document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);selectedSummaryDay=null;renderSummary()};
+document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);selectedSummaryDay=null;renderSummary()};
 
 // iOS zoom prevention retained.
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
