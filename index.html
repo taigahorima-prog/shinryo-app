@@ -190,12 +190,26 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 #selectedDayPanel .day-add-label{
   font-size:16px !important;
 }
+</style><style>
+/* v5.17: swipe intent threshold — no red flicker during vertical scrolling */
+.summary-swipe-delete{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  transition:opacity .10s ease !important;
+}
+.summary-swipe-wrap.swipe-active .summary-swipe-delete,
+.summary-swipe-wrap.open .summary-swipe-delete{
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.16</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.17</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -405,24 +419,57 @@ function setupSummarySwipeDelete(){
  const wraps=[...document.querySelectorAll(".summary-swipe-wrap")];
  wraps.forEach(w=>{
   const card=w.querySelector(".summary-visit-card");
-  let sx=0,sy=0,dx=0,tracking=false;
+  let sx=0,sy=0,dx=0,tracking=false,axis=null,base=0;
+  const INTENT=22,OPEN_AT=48,OPEN_X=-82,MAX_X=-88;
+
   card.addEventListener("touchstart",e=>{
-   document.querySelectorAll(".summary-swipe-wrap.open").forEach(x=>{if(x!==w)x.classList.remove("open")});
-   sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;tracking=true;card.style.transition="none";
+   document.querySelectorAll(".summary-swipe-wrap.open").forEach(x=>{if(x!==w){x.classList.remove("open","swipe-active")}});
+   sx=e.touches[0].clientX;sy=e.touches[0].clientY;
+   base=w.classList.contains("open")?OPEN_X:0;
+   dx=base;tracking=true;axis=null;
+   card.style.transition="none";
   },{passive:true});
+
   card.addEventListener("touchmove",e=>{
    if(!tracking)return;
-   const x=e.touches[0].clientX-sx,y=e.touches[0].clientY-sy;
-   if(Math.abs(y)>Math.abs(x)&&Math.abs(y)>8){tracking=false;card.style.transition="";return}
-   if(Math.abs(x)>7)e.preventDefault();
-   dx=Math.max(-92,Math.min(0,x+(w.classList.contains("open")?-82:0)));
-   card.style.transform=`translateX(${dx}px)`;
+   const rawX=e.touches[0].clientX-sx,rawY=e.touches[0].clientY-sy;
+
+   if(!axis){
+    if(Math.abs(rawX)<INTENT && Math.abs(rawY)<INTENT)return;
+    if(Math.abs(rawY)>Math.abs(rawX)*1.15){
+      axis="y";tracking=false;card.style.transition="";return;
+    }
+    axis="x";
+   }
+   if(axis!=="x")return;
+
+   e.preventDefault();
+   let target=base+rawX;
+   target=Math.max(MAX_X,Math.min(0,target));
+   dx=target;
+
+   // Reveal red only after a deliberate horizontal swipe.
+   if(Math.abs(target)>=INTENT || base<0)w.classList.add("swipe-active");
+   else w.classList.remove("swipe-active");
+
+   card.style.transform=`translateX(${target}px)`;
   },{passive:false});
+
   card.addEventListener("touchend",()=>{
-   if(!tracking){card.style.transform="";return}
+   card.style.transition="";
+   card.style.transform="";
+   if(axis==="x"){
+    const shouldOpen=dx<=-OPEN_AT;
+    w.classList.toggle("open",shouldOpen);
+    w.classList.toggle("swipe-active",shouldOpen);
+   }
+   tracking=false;axis=null;
+  });
+
+  card.addEventListener("touchcancel",()=>{
    card.style.transition="";card.style.transform="";
-   if(dx<-38)w.classList.add("open");else w.classList.remove("open");
-   tracking=false;
+   if(!w.classList.contains("open"))w.classList.remove("swipe-active");
+   tracking=false;axis=null;
   });
  });
  document.querySelectorAll("[data-summary-delete]").forEach(b=>b.onclick=()=>deleteSummaryVisit(b.dataset.summaryDelete));
