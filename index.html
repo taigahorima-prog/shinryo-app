@@ -383,12 +383,17 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   -webkit-backdrop-filter:blur(14px);
   backdrop-filter:blur(14px);
 }
+</style><style>
+/* v5.30: ホームのメニューボタンを少し下へ */
+#menuButton:not(.cancel-mode){
+  transform:translateY(8px) !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.29</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.30</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
