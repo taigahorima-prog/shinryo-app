@@ -89,6 +89,12 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .selected-day-title{font-size:17px;font-weight:750;margin:12px 2px 9px}
 .summary-visit-card{background:#fff;border-radius:13px;margin-bottom:9px;padding:11px 12px;display:flex;align-items:center;gap:10px}
 .summary-visit-info{flex:1;min-width:0}.summary-ear{font-size:20px;font-weight:800}.summary-farmer{font-size:13px;color:#555;margin-top:2px}.summary-items{font-size:11px;color:#777;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summary-visit-money{font-weight:750;white-space:nowrap}
+</style><style>
+/* v3.6 */
+.today-visit-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-fixed-total{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:14px;z-index:80;display:flex;flex-direction:column;line-height:1.08;pointer-events:none}
+.summary-fixed-total span{font-size:12px;color:#666}.summary-fixed-total strong{font-size:22px;font-weight:800}
+#summaryView main{padding-top:62px}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -119,6 +125,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 </div>
 
 <div id="summaryView" class="view">
+<div class="summary-fixed-total"><span>今月の収益</span><strong id="fixedMonthTotal">¥0</strong></div>
 <main>
 <button id="closeSummary" class="backbtn">‹ 戻る</button>
 <div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
@@ -202,7 +209,7 @@ function renderMain(){
  const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
  const farmer=document.getElementById("farmerName");if(document.activeElement!==farmer)farmer.value=farmerName;
  const tv=visitsFor(todayKey());
- document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?v.earTag:`診療${i+1}`;const sub=[v.farmerName,`${itemCount}処置`].filter(Boolean).join(" ・ ");return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${sub}</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
+ document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?v.earTag:`診療${i+1}`;const treatmentText=grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ");const sub=[v.farmerName,treatmentText].filter(Boolean).join(" ・ ");return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${sub}</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
  document.querySelectorAll("[data-today-edit]").forEach(b=>b.onclick=()=>editVisit(todayKey(),b.dataset.todayEdit));
 }
 
@@ -246,7 +253,7 @@ function renderSummary(){
  const y=shownMonth.getFullYear(),m=shownMonth.getMonth();document.getElementById("monthTitle").textContent=`${y}年${m+1}月`;
  const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(data).filter(k=>k.startsWith(prefix)&&visitsFor(k).length).sort();
  const totals=keys.map(k=>[k,dayTotal(k)]),mt=totals.reduce((a,x)=>a+x[1],0);
- document.getElementById("monthTotal").textContent=yen(mt);document.getElementById("workDays").textContent=`${keys.length}日`;document.getElementById("dayAverage").textContent=yen(keys.length?Math.round(mt/keys.length):0);
+ document.getElementById("monthTotal").textContent=yen(mt);document.getElementById("fixedMonthTotal").textContent=yen(mt);document.getElementById("workDays").textContent=`${keys.length}日`;document.getElementById("dayAverage").textContent=yen(keys.length?Math.round(mt/keys.length):0);
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
@@ -335,7 +342,7 @@ document.getElementById("qplus").onclick=()=>{quantity=Math.min(99,quantity+1);d
 document.getElementById("addOther").onclick=()=>{if(sel.value==="")return;let[n,p]=OTHER[Number(sel.value)];addDraft(n,p,quantity);sel.value="";quantity=1;document.getElementById("quantity").textContent=1;document.getElementById("addOther").disabled=true};
 document.getElementById("clearDraft").onclick=()=>{if((draft.length||editingVisitId)&&confirm("今回の入力をクリアしますか？"))clearDraft()};
 document.getElementById("saveVisit").onclick=saveVisit;
-document.getElementById("openSummary").onclick=()=>{renderSummary();show("summaryView")};
+document.getElementById("openSummary").onclick=()=>{const now=new Date();shownMonth=new Date(now.getFullYear(),now.getMonth(),1);selectedSummaryDay=todayKey();renderSummary();show("summaryView")};
 document.getElementById("closeSummary").onclick=()=>show("mainView");
 document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summaryView")};
 document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);selectedSummaryDay=null;renderSummary()};
