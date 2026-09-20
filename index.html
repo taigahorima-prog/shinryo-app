@@ -227,12 +227,23 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .summary-swipe-wrap.open{
   background:#ff3b30 !important;
 }
+</style><style>
+/* v5.22: 今日の診療編集も日付タイトル表示に統一 */
+.visit-edit-entry #total{display:none !important}
+.visit-edit-entry #revenueLabel{
+  font-size:30px !important;
+  line-height:1.25 !important;
+  font-weight:800 !important;
+  color:#111 !important;
+  margin-top:8px !important;
+  margin-bottom:12px !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.21</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.22</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -346,10 +357,17 @@ function renderMain(){
  const isCalendarFlow=!!(returnToSummaryAfterEdit&&viewingDay);
  const isCalendarDateEntry=!!(isCalendarFlow&&viewingDay!==todayKey());
  document.body.classList.toggle("calendar-date-entry",isCalendarDateEntry);
+ document.body.classList.toggle("visit-edit-entry",!!editingVisitId);
  const revenueLabel=document.getElementById("revenueLabel");
  if(revenueLabel){
-   if(isCalendarDateEntry) revenueLabel.textContent=`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を${editingVisitId?"編集":"追加"}`;
-   else revenueLabel.textContent="本日の収益";
+   if(editingVisitId){
+     const editDate=viewingDay||todayKey();
+     revenueLabel.textContent=`${Number(editDate.slice(5,7))}/${Number(editDate.slice(8,10))}の診療を編集`;
+   }else if(isCalendarDateEntry){
+     revenueLabel.textContent=`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を追加`;
+   }else{
+     revenueLabel.textContent="本日の収益";
+   }
  }
  const totalEl=document.getElementById("total");
  if(totalEl&&isCalendarDateEntry)totalEl.textContent=yen(dayTotal(entryDate));
