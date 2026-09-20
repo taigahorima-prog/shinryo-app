@@ -232,7 +232,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.20</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.21</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -343,15 +343,20 @@ function renderMain(){
  document.getElementById("saveVisit").disabled=!draft.length;
  document.getElementById("saveVisit").textContent=editingVisitId?"この診療を更新":"この診療を保存";
  const entryDate=(returnToSummaryAfterEdit&&viewingDay)?viewingDay:todayKey();
- const isCalendarDateEntry=!!(returnToSummaryAfterEdit&&viewingDay&&viewingDay!==todayKey()&&!editingVisitId);
+ const isCalendarFlow=!!(returnToSummaryAfterEdit&&viewingDay);
+ const isCalendarDateEntry=!!(isCalendarFlow&&viewingDay!==todayKey());
  document.body.classList.toggle("calendar-date-entry",isCalendarDateEntry);
  const revenueLabel=document.getElementById("revenueLabel");
- if(revenueLabel)revenueLabel.textContent=isCalendarDateEntry?`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を追加`:"本日の収益";
+ if(revenueLabel){
+   if(isCalendarDateEntry) revenueLabel.textContent=`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を${editingVisitId?"編集":"追加"}`;
+   else revenueLabel.textContent="本日の収益";
+ }
  const totalEl=document.getElementById("total");
  if(totalEl&&isCalendarDateEntry)totalEl.textContent=yen(dayTotal(entryDate));
  const topBtn=document.getElementById("menuButton");
- topBtn.textContent=editingVisitId?"キャンセル":"☰";
- topBtn.classList.toggle("cancel-mode",!!editingVisitId);
+ const showCancel=!!editingVisitId||isCalendarFlow;
+ topBtn.textContent=showCancel?"キャンセル":"☰";
+ topBtn.classList.toggle("cancel-mode",showCancel);
  document.getElementById("clearDraft").disabled=!draft.length&&!editingVisitId;
  const banner=document.getElementById("editingBanner");
  if(editingVisitId){banner.classList.add("active");banner.textContent="保存済みの診療を編集中です。更新すると元の診療に上書きされます。"}
@@ -542,15 +547,12 @@ function deleteVisit(k,id){
 }
 function editVisit(k,id,fromSummary=false){
  const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
- // Current-day visits can be edited through the main input screen.
- if(k===todayKey()){
-   returnToSummaryAfterEdit=fromSummary||document.getElementById("dayView").classList.contains("active");
-   draft=v.items.map(e=>({...e,id:uid()}));editingVisitId=id;earTag=v.earTag||"";farmerName=v.farmerName||"";renderMain();show("mainView");
- }else{
-   returnToSummaryAfterEdit=fromSummary;
-   renderPastVisitEditor(k,id);
-   show("dayView");
- }
+ // All dates now use the same main treatment input editor.
+ viewingDay=k;
+ returnToSummaryAfterEdit=fromSummary||document.getElementById("dayView").classList.contains("active");
+ draft=v.items.map(e=>({...e,id:uid()}));
+ editingVisitId=id;earTag=v.earTag||"";farmerName=v.farmerName||"";
+ renderMain();show("mainView");
 }
 function renderPastVisitEditor(k,id){
  const v=visitsFor(k).find(x=>x.id===id);if(!v)return;
@@ -577,15 +579,18 @@ function deleteVisitItem(k,id,name){
 }
 
 function cancelCurrentEdit(){
- if(!editingVisitId)return;
  const goBackToSummary=returnToSummaryAfterEdit;
+ const backDay=viewingDay;
  draft=[];editingVisitId=null;earTag="";farmerName="";quantity=1;
  const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
  const qtyEl=document.getElementById("quantity");if(qtyEl)qtyEl.textContent="1";
  const addBtn=document.getElementById("addOther");if(addBtn)addBtn.disabled=true;
- returnToSummaryAfterEdit=false;
+ returnToSummaryAfterEdit=false;viewingDay=null;
  renderMain();
- if(goBackToSummary){renderSummary();show("summaryView")}else{show("mainView")}
+ if(goBackToSummary){
+   if(backDay)selectedSummaryDay=backDay;
+   renderSummary();show("summaryView");
+ }else show("mainView");
 }
 
 
@@ -685,7 +690,7 @@ function csvCell(v){const s=String(v??"");return /[",\n\r]/.test(s)?'"'+s.replac
 function exportMasterCSV(){const rows=[["区分","処置名","B-A点","表示順"]];QUICK.forEach((x,i)=>rows.push(["よく使う処置",x[0],x[1],i+1]));OTHER.forEach((x,i)=>rows.push(["その他の処置",x[0],x[1],i+1]));const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`診療処置マスター_${todayKey()}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function parseCSV(text){const rows=[];let row=[],cell="",quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else{if(c==='"')quoted=true;else if(c===","){row.push(cell);cell=""}else if(c==="\n"){row.push(cell);rows.push(row);row=[];cell=""}else if(c!=="\r")cell+=c}}if(cell!==""||row.length){row.push(cell);rows.push(row)}return rows}
 async function importMasterCSV(file){const msg=document.getElementById("masterMessage");try{let text=(await file.text()).replace(/^\uFEFF/,"");const rows=parseCSV(text).filter(r=>r.some(c=>String(c).trim()!=="")),hd=rows[0].map(x=>String(x).trim()),ci=hd.indexOf("区分"),ni=hd.indexOf("処置名"),pi=hd.indexOf("B-A点"),oi=hd.indexOf("表示順");if(ci<0||ni<0||pi<0)throw new Error("「区分・処置名・B-A点」の列が必要です");const q=[],o=[];rows.slice(1).forEach((r,i)=>{const cat=String(r[ci]||"").trim(),name=String(r[ni]||"").trim(),point=Number(String(r[pi]||"").replace(/[,，\s]/g,"")),order=oi>=0?Number(r[oi])||i+1:i+1;if(!name||!Number.isFinite(point))throw new Error(`${i+2}行目を確認してください`);(cat==="よく使う処置"?q:o).push({name,point,order})});if(!confirm(`マスターを ${q.length+o.length}件 の内容に置き換えますか？`))return;q.sort((a,b)=>a.order-b.order);o.sort((a,b)=>a.order-b.order);QUICK=q.map(x=>[x.name,x.point]);OTHER=o.map(x=>[x.name,x.point]);saveMaster();rebuildOtherSelect();renderMain();renderSettings();msg.textContent="読み込み完了"}catch(e){msg.textContent=`読み込みできませんでした：${e.message}`}}
-document.getElementById("menuButton").onclick=()=>{if(editingVisitId)cancelCurrentEdit();else openMenu()};
+document.getElementById("menuButton").onclick=()=>{if(editingVisitId||(returnToSummaryAfterEdit&&viewingDay))cancelCurrentEdit();else openMenu()};
 document.getElementById("closeMenu").onclick=closeMenu;
 document.getElementById("menuOverlay").onclick=e=>{if(e.target.id==="menuOverlay")closeMenu()};
 document.getElementById("menuSummary").onclick=()=>{closeMenu();openSummaryScreen()};
