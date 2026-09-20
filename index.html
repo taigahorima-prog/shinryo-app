@@ -106,6 +106,8 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .other-draft-list{margin-top:10px}.other-draft-title{font-size:12px;color:#777;margin:0 3px 5px}
 .other-draft-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:9px 11px;margin-top:6px;font-size:14px}
 .other-draft-row span{flex:1;min-width:0}.other-draft-row strong{white-space:nowrap;font-size:14px}
+</style><style>
+.other-draft-delete{border:0;border-radius:8px;background:#ededf0;color:#d70015;padding:6px 9px;font-size:12px;white-space:nowrap;touch-action:manipulation}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -217,7 +219,8 @@ function renderMain(){
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>removeDraft(b.dataset.minus));
  const otherNames=new Set(OTHER.map(x=>x[0]));
  const otherDraft=grouped(draft).filter(([n])=>otherNames.has(n));
- document.getElementById("otherDraftList").innerHTML=otherDraft.length?`<div class="other-draft-title">追加した処置</div>`+otherDraft.map(([n,x])=>`<div class="other-draft-row"><span>${n}</span><strong>×${x.quantity}</strong></div>`).join(""):"";
+ document.getElementById("otherDraftList").innerHTML=otherDraft.length?`<div class="other-draft-title">追加した処置</div>`+otherDraft.map(([n,x])=>`<div class="other-draft-row"><span>${n}</span><strong>×${x.quantity}</strong><button class="other-draft-delete" data-other-delete="${n}">削除</button></div>`).join(""):"";
+ document.querySelectorAll("[data-other-delete]").forEach(b=>b.onclick=()=>{draft=draft.filter(e=>e.name!==b.dataset.otherDelete);renderMain()});
  const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
  const farmer=document.getElementById("farmerName");if(document.activeElement!==farmer)farmer.value=farmerName;
  const tv=visitsFor(todayKey());
