@@ -388,12 +388,25 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 #menuButton:not(.cancel-mode){
   transform:translateY(30px) !important;
 }
+</style><style>
+/* v5.33: ホーム「今日の診療」も左スワイプ削除 */
+.today-swipe-wrap{
+  border-radius:14px !important;
+  margin-bottom:10px !important;
+}
+.today-swipe-wrap .today-visit-row{
+  margin-bottom:0 !important;
+  border-radius:14px !important;
+}
+.today-swipe-wrap .summary-swipe-delete{
+  border-radius:0 14px 14px 0 !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.32</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.33</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -539,8 +552,21 @@ function renderMain(){
  const ear=document.getElementById("earTag");if(document.activeElement!==ear)ear.value=earTag;
  const farmer=document.getElementById("farmerName");if(document.activeElement!==farmer)farmer.value=farmerName;
  const tv=visitsFor(todayKey());
- document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?v.earTag:`診療${i+1}`;const treatmentText=grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ");const sub=[v.farmerName,treatmentText].filter(Boolean).join(" ・ ");return `<div class="today-visit-row"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${sub}</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
+ document.getElementById("todayVisits").innerHTML=tv.length?tv.map((v,i)=>{const itemCount=v.items.reduce((a,e)=>a+e.quantity,0);const label=v.earTag?v.earTag:`診療${i+1}`;const treatmentText=grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ");const sub=[v.farmerName,treatmentText].filter(Boolean).join(" ・ ");return `<div class="today-swipe-wrap summary-swipe-wrap" data-swipe-id="${v.id}"><button class="summary-swipe-delete" data-today-delete="${v.id}" aria-label="削除">×</button><div class="today-visit-row summary-visit-card"><div class="today-visit-main"><div class="today-visit-title">${label}</div><div class="today-visit-sub">${sub}</div></div><div class="today-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-today-edit="${v.id}">編集</button></div></div>`}).join(""):'<div class="empty">まだ保存した診療はありません</div>';
  document.querySelectorAll("[data-today-edit]").forEach(b=>b.onclick=()=>editVisit(todayKey(),b.dataset.todayEdit));
+ document.querySelectorAll("[data-today-delete]").forEach(b=>b.onclick=()=>deleteTodayVisit(b.dataset.todayDelete));
+ setupSummarySwipeDelete();
+}
+
+function deleteTodayVisit(id){
+ const k=todayKey(),visits=visitsFor(k),v=visits.find(x=>x.id===id);
+ if(!v)return;
+ const label=v.earTag||"この診療";
+ if(!confirm(`${label} の診療を削除しますか？`))return;
+ data[k]=visits.filter(x=>x.id!==id);
+ if(!data[k].length)delete data[k];
+ saveData();
+ renderMain();
 }
 
 function animateRevenue(from,to){
