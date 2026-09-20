@@ -172,16 +172,30 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 }
 </style><style>
 /* v5.14: iOS-style swipe to delete */
-.summary-swipe-wrap{position:relative;overflow:hidden;border-radius:15px;margin-bottom:10px;background:#ff3b30}
-.summary-swipe-delete{position:absolute;right:0;top:0;bottom:0;width:82px;border:0;background:#ff3b30;color:#fff;font-size:27px;font-weight:500;display:flex;align-items:center;justify-content:center}
-.summary-swipe-wrap .summary-visit-card{position:relative;z-index:2;margin-bottom:0;transition:transform .18s ease;will-change:transform;touch-action:pan-y;background:#fff}
+.summary-swipe-wrap{position:relative;overflow:hidden;border-radius:15px;margin-bottom:10px;background:transparent}
+.summary-swipe-delete{position:absolute;z-index:1;right:0;top:0;bottom:0;width:82px;border:0;background:#ff3b30;color:#fff;font-size:27px;font-weight:500;display:flex;align-items:center;justify-content:center;border-radius:0 15px 15px 0}
+.summary-swipe-wrap .summary-visit-card{position:relative;z-index:2;width:100%;margin:0;transition:transform .18s ease;will-change:transform;touch-action:pan-y;background:#fff}
 .summary-swipe-wrap.open .summary-visit-card{transform:translateX(-82px)}
+</style><style>
+/* v5.16: 診療追加カードをさらにコンパクトに */
+#selectedDayPanel .day-add-button{
+  min-height:66px !important;
+  padding:10px 14px !important;
+}
+#selectedDayPanel .day-add-plus{
+  width:30px !important;
+  height:30px !important;
+  font-size:22px !important;
+}
+#selectedDayPanel .day-add-label{
+  font-size:16px !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.14</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.16</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
