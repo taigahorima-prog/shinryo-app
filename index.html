@@ -243,7 +243,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.22</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.23</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -361,8 +361,7 @@ function renderMain(){
  const revenueLabel=document.getElementById("revenueLabel");
  if(revenueLabel){
    if(editingVisitId){
-     const editDate=viewingDay||todayKey();
-     revenueLabel.textContent=`${Number(editDate.slice(5,7))}/${Number(editDate.slice(8,10))}の診療を編集`;
+     revenueLabel.textContent="診療を編集";
    }else if(isCalendarDateEntry){
      revenueLabel.textContent=`${Number(entryDate.slice(5,7))}/${Number(entryDate.slice(8,10))}の診療を追加`;
    }else{
