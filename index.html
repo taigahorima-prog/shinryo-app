@@ -114,12 +114,40 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 </style><style>
 /* v4.3 */
 .app-version{font-size:11px;color:#aaa;margin-bottom:4px;letter-spacing:.2px;font-weight:400}
-</style><style>/* v5.0 */.menu-button{font-size:25px;line-height:1;padding:7px 10px}.menu-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.28)}.menu-overlay.active{display:block}.menu-sheet{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:10px;width:230px;background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.18);overflow:hidden}.menu-sheet-head{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid #eee}.menu-sheet-head strong{flex:1}.menu-close{border:0;background:none;font-size:24px;color:#777}.menu-item{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:16px;text-align:left;font-size:17px;display:flex;justify-content:space-between}.menu-item:last-child{border-bottom:0}.menu-item span{color:#aaa;font-size:22px}.settings-title{font-size:30px;font-weight:800;margin:8px 0 20px}.settings-card{background:#fff;border-radius:15px;padding:16px;margin-bottom:16px}.settings-card h2{font-size:19px;margin:0 0 8px}.settings-note{font-size:13px;color:#666;line-height:1.55;margin:0 0 15px}.settings-action{width:100%;min-height:48px;border:0;border-radius:11px;background:#087ff5;color:#fff;font-size:16px;font-weight:650;margin-top:8px}.settings-action.secondary{background:#e9f3ff;color:#087ff5}.master-message{font-size:13px;margin-top:12px;color:#555;line-height:1.5}.master-head{display:flex;align-items:center}.master-head h2{flex:1}.master-head span{font-size:12px;color:#888}.master-row{padding:10px 0;border-bottom:1px solid #eee}.master-row:last-child{border-bottom:0}.master-row-top{display:flex;gap:8px}.master-row-name{flex:1;font-size:14px;font-weight:600}.master-row-point{font-size:14px;font-weight:700}.master-row-cat{font-size:11px;color:#888;margin-top:3px}</style></head>
+</style><style>/* v5.1 */.menu-button{font-size:25px;line-height:1;padding:7px 10px}.menu-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.28)}.menu-overlay.active{display:block}.menu-sheet{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:10px;width:230px;background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.18);overflow:hidden}.menu-sheet-head{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid #eee}.menu-sheet-head strong{flex:1}.menu-close{border:0;background:none;font-size:24px;color:#777}.menu-item{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:16px;text-align:left;font-size:17px;display:flex;justify-content:space-between}.menu-item:last-child{border-bottom:0}.menu-item span{color:#aaa;font-size:22px}.settings-title{font-size:30px;font-weight:800;margin:8px 0 20px}.settings-card{background:#fff;border-radius:15px;padding:16px;margin-bottom:16px}.settings-card h2{font-size:19px;margin:0 0 8px}.settings-note{font-size:13px;color:#666;line-height:1.55;margin:0 0 15px}.settings-action{width:100%;min-height:48px;border:0;border-radius:11px;background:#087ff5;color:#fff;font-size:16px;font-weight:650;margin-top:8px}.settings-action.secondary{background:#e9f3ff;color:#087ff5}.master-message{font-size:13px;margin-top:12px;color:#555;line-height:1.5}.master-head{display:flex;align-items:center}.master-head h2{flex:1}.master-head span{font-size:12px;color:#888}.master-row{padding:10px 0;border-bottom:1px solid #eee}.master-row:last-child{border-bottom:0}.master-row-top{display:flex;gap:8px}.master-row-name{flex:1;font-size:14px;font-weight:600}.master-row-point{font-size:14px;font-weight:700}.master-row-cat{font-size:11px;color:#888;margin-top:3px}</style>
+<style>
+/* v5.1: in-app master editor */
+.master-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:10px 0 4px}
+.master-edit-toggle,.master-add{border:0;border-radius:10px;font-weight:650}
+.master-edit-toggle{padding:9px 15px;background:#e9f3ff;color:#087ff5}
+.master-edit-toggle.active{background:#087ff5;color:#fff}
+.master-add{width:40px;height:40px;background:#087ff5;color:#fff;font-size:25px;line-height:1}
+.master-row.editing{display:flex;align-items:center;gap:8px}
+.master-drag{display:none;width:28px;color:#8e8e93;font-size:22px;line-height:1;text-align:center;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none}
+.master-row.editing .master-drag{display:block}
+.master-row-content{flex:1;min-width:0}
+.master-row-actions{display:none;gap:6px}
+.master-row.editing .master-row-actions{display:flex}
+.master-row-edit,.master-row-delete{border:0;border-radius:8px;padding:7px 9px;font-size:12px}
+.master-row-edit{background:#e9f3ff;color:#087ff5}.master-row-delete{background:#ededf0;color:#d70015}
+.master-row.dragging{opacity:.45;background:#f0f0f2;border-radius:10px}
+.master-row.drag-over{border-top:3px solid #087ff5}
+.master-modal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.35);padding:20px;align-items:center;justify-content:center}
+.master-modal.active{display:flex}
+.master-modal-card{width:min(100%,460px);background:#fff;border-radius:17px;padding:18px}
+.master-modal-title{font-size:21px;font-weight:800;margin-bottom:17px}
+.master-field-label{display:block;font-size:13px;color:#666;margin:12px 0 6px}
+.master-field-input{width:100%;min-height:48px;border:1px solid #c8c8cc;border-radius:11px;background:#fff;padding:10px 12px;font-size:16px}
+.master-modal-actions{display:flex;gap:9px;margin-top:20px}
+.master-modal-actions button{flex:1;min-height:46px;border:0;border-radius:11px;font-size:16px;font-weight:650}
+.master-modal-cancel{background:#ededf0;color:#333}.master-modal-save{background:#087ff5;color:#fff}
+</style>
+</head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.0</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.1</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -146,7 +174,31 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 
 
 <div id="menuOverlay" class="menu-overlay"><div class="menu-sheet"><div class="menu-sheet-head"><strong>メニュー</strong><button id="closeMenu" class="menu-close">×</button></div><button id="menuSummary" class="menu-item">集計 <span>›</span></button><button id="menuSettings" class="menu-item">設定 <span>›</span></button></div></div>
-<div id="settingsView" class="view"><main><button id="closeSettings" class="backbtn">‹ 戻る</button><div class="settings-title">設定</div><section class="settings-card"><h2>処置マスター管理</h2><p class="settings-note">現在の処置名・B−A点・表示区分をCSVで書き出したり、編集したCSVを読み込んで更新できます。</p><button id="exportMaster" class="settings-action">CSVをエクスポート</button><button id="importMasterButton" class="settings-action secondary">CSVをインポート</button><input id="importMasterFile" type="file" accept=".csv,text/csv" hidden><div id="masterMessage" class="master-message"></div></section><section class="settings-card"><div class="master-head"><h2>現在のマスター</h2><span id="masterCount"></span></div><div id="masterList"></div></section></main></div>
+<div id="settingsView" class="view"><main><button id="closeSettings" class="backbtn">‹ 戻る</button><div class="settings-title">設定</div><section class="settings-card"><h2>処置マスター管理</h2><p class="settings-note">現在の処置名・B−A点・表示区分をCSVで書き出したり、編集したCSVを読み込んで更新できます。</p><button id="exportMaster" class="settings-action">CSVをエクスポート</button><button id="importMasterButton" class="settings-action secondary">CSVをインポート</button><input id="importMasterFile" type="file" accept=".csv,text/csv" hidden><div id="masterMessage" class="master-message"></div></section><section class="settings-card"><div class="master-head"><h2>現在のマスター</h2><span id="masterCount"></span></div>
+<div class="master-toolbar">
+  <button id="toggleMasterEdit" class="master-edit-toggle">編集</button>
+  <button id="addMasterItem" class="master-add" aria-label="処置を追加">＋</button>
+</div><div id="masterList"></div></section></main></div>
+
+<div id="masterEditorModal" class="master-modal">
+ <div class="master-modal-card">
+  <div class="master-modal-title" id="masterEditorTitle">処置を編集</div>
+  <label class="master-field-label">項目名</label>
+  <input id="masterNameInput" class="master-field-input" type="text" autocomplete="off">
+  <label class="master-field-label">B−A点</label>
+  <input id="masterPointInput" class="master-field-input" type="number" min="0" inputmode="numeric">
+  <label class="master-field-label">区分</label>
+  <select id="masterCategoryInput" class="master-field-input">
+   <option value="quick">よく使う処置</option>
+   <option value="other">その他の処置</option>
+  </select>
+  <div class="master-modal-actions">
+   <button id="cancelMasterEditor" class="master-modal-cancel">キャンセル</button>
+   <button id="saveMasterEditor" class="master-modal-save">保存</button>
+  </div>
+ </div>
+</div>
+
 <div id="summaryView" class="view">
 <main>
 <button id="closeSummary" class="backbtn">‹ 戻る</button>
@@ -387,20 +439,121 @@ document.getElementById("backToSummary").onclick=()=>{renderSummary();show("summ
 document.getElementById("prevMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()-1);selectedSummaryDay=null;renderSummary()};
 document.getElementById("nextMonth").onclick=()=>{shownMonth.setMonth(shownMonth.getMonth()+1);selectedSummaryDay=null;renderSummary()};
 
-function openSummaryScreen(){const now=new Date();shownMonth=new Date(now.getFullYear(),now.getMonth(),1);selectedSummaryDay=todayKey();renderSummary();show("summaryView")}function openMenu(){document.getElementById("menuOverlay").classList.add("active")}function closeMenu(){document.getElementById("menuOverlay").classList.remove("active")}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function renderSettings(){document.getElementById("masterCount").textContent=`${QUICK.length+OTHER.length}件`;const rows=[...QUICK.map(x=>["よく使う処置",x[0],x[1]]),...OTHER.map(x=>["その他の処置",x[0],x[1]])];document.getElementById("masterList").innerHTML=rows.map(r=>`<div class="master-row"><div class="master-row-top"><div class="master-row-name">${escapeHtml(r[1])}</div><div class="master-row-point">${yen(r[2])}</div></div><div class="master-row-cat">${r[0]}</div></div>`).join("")}function csvCell(v){const s=String(v??"");return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}function exportMasterCSV(){const rows=[["区分","処置名","B-A点","表示順"]];QUICK.forEach((x,i)=>rows.push(["よく使う処置",x[0],x[1],i+1]));OTHER.forEach((x,i)=>rows.push(["その他の処置",x[0],x[1],i+1]));const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`診療処置マスター_${todayKey()}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);document.getElementById("masterMessage").textContent="CSVを書き出しました。"}function parseCSV(text){const rows=[];let row=[],cell="",quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else{if(c==='"')quoted=true;else if(c===","){row.push(cell);cell=""}else if(c==="\n"){row.push(cell);rows.push(row);row=[];cell=""}else if(c!=="\r")cell+=c}}if(cell!==""||row.length){row.push(cell);rows.push(row)}return rows}async function importMasterCSV(file){const msg=document.getElementById("masterMessage");try{let text=(await file.text()).replace(/^\uFEFF/,"");const rows=parseCSV(text).filter(r=>r.some(c=>String(c).trim()!==""));if(rows.length<2)throw new Error("データがありません");const hd=rows[0].map(x=>String(x).trim()),ci=hd.indexOf("区分"),ni=hd.indexOf("処置名"),pi=hd.indexOf("B-A点"),oi=hd.indexOf("表示順");if(ci<0||ni<0||pi<0)throw new Error("「区分・処置名・B-A点」の列が必要です");const q=[],o=[];rows.slice(1).forEach((r,idx)=>{const cat=String(r[ci]??"").trim(),name=String(r[ni]??"").trim(),point=Number(String(r[pi]??"").replace(/[,，\s]/g,"")),order=oi>=0?Number(r[oi])||idx+1:idx+1;if(!name||!Number.isFinite(point)||point<0)throw new Error(`${idx+2}行目を確認してください`);if(cat==="よく使う処置")q.push({name,point,order});else if(cat==="その他の処置")o.push({name,point,order});else throw new Error(`${idx+2}行目の区分を確認してください`)});if(!confirm(`マスターを ${q.length+o.length}件 の内容に置き換えますか？`))return;q.sort((a,b)=>a.order-b.order);o.sort((a,b)=>a.order-b.order);QUICK=q.map(x=>[x.name,x.point]);OTHER=o.map(x=>[x.name,x.point]);saveMaster();rebuildOtherSelect();renderMain();renderSettings();msg.textContent=`読み込み完了：${QUICK.length+OTHER.length}件`}catch(e){msg.textContent=`読み込みできませんでした：${e.message}`}}document.getElementById("menuButton").onclick=()=>{if(editingVisitId)cancelCurrentEdit();else openMenu()};document.getElementById("closeMenu").onclick=closeMenu;document.getElementById("menuOverlay").onclick=e=>{if(e.target.id==="menuOverlay")closeMenu()};document.getElementById("menuSummary").onclick=()=>{closeMenu();openSummaryScreen()};document.getElementById("menuSettings").onclick=()=>{closeMenu();renderSettings();show("settingsView")};document.getElementById("closeSettings").onclick=()=>show("mainView");document.getElementById("exportMaster").onclick=exportMasterCSV;document.getElementById("importMasterButton").onclick=()=>document.getElementById("importMasterFile").click();document.getElementById("importMasterFile").onchange=e=>{const f=e.target.files?.[0];if(f)importMasterCSV(f);e.target.value=""};
-// iOS zoom prevention retained.
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
-document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
-let lastTapTime=0,lastTapTarget=null,lastTapX=0,lastTapY=0;
-document.addEventListener("touchend",e=>{
-  const now=Date.now(),t=e.changedTouches&&e.changedTouches[0];
-  const x=t?t.clientX:0,y=t?t.clientY:0;
-  const sameTarget=e.target===lastTapTarget;
-  const close=Math.abs(x-lastTapX)<32&&Math.abs(y-lastTapY)<32;
-  if(now-lastTapTime<420&&sameTarget&&close)e.preventDefault();
-  lastTapTime=now;lastTapTarget=e.target;lastTapX=x;lastTapY=y;
+function openSummaryScreen(){const now=new Date();shownMonth=new Date(now.getFullYear(),now.getMonth(),1);selectedSummaryDay=todayKey();renderSummary();show("summaryView")}function openMenu(){document.getElementById("menuOverlay").classList.add("active")}function closeMenu(){document.getElementById("menuOverlay").classList.remove("active")}
+let editingMasterGlobalIndex=null;
+function openMasterEditor(globalIndex=null){
+ editingMasterGlobalIndex=globalIndex;
+ const isNew=globalIndex===null;
+ document.getElementById("masterEditorTitle").textContent=isNew?"処置を追加":"処置を編集";
+ if(isNew){
+  document.getElementById("masterNameInput").value="";
+  document.getElementById("masterPointInput").value="";
+  document.getElementById("masterCategoryInput").value="quick";
+ }else{
+  const r=masterRows()[globalIndex];
+  document.getElementById("masterNameInput").value=r.name;
+  document.getElementById("masterPointInput").value=r.point;
+  document.getElementById("masterCategoryInput").value=r.category;
+ }
+ document.getElementById("masterEditorModal").classList.add("active");
+ setTimeout(()=>document.getElementById("masterNameInput").focus(),50);
+}
+function closeMasterEditor(){document.getElementById("masterEditorModal").classList.remove("active");editingMasterGlobalIndex=null}
+function commitMasterEditor(){
+ const name=document.getElementById("masterNameInput").value.trim();
+ const point=Number(document.getElementById("masterPointInput").value);
+ const category=document.getElementById("masterCategoryInput").value;
+ if(!name){alert("項目名を入力してください");return}
+ if(!Number.isFinite(point)||point<0){alert("B−A点を0以上の数字で入力してください");return}
+ const duplicate=masterRows().some((r,i)=>r.name===name&&i!==editingMasterGlobalIndex);
+ if(duplicate&&!confirm("同じ項目名があります。このまま保存しますか？"))return;
+ if(editingMasterGlobalIndex===null){
+  (category==="quick"?QUICK:OTHER).push([name,point]);
+ }else{
+  const old=masterRows()[editingMasterGlobalIndex];
+  const src=old.category==="quick"?QUICK:OTHER;
+  src.splice(old.index,1);
+  (category==="quick"?QUICK:OTHER).push([name,point]);
+ }
+ saveMaster();rebuildOtherSelect();renderMain();renderSettings();closeMasterEditor();
+ document.getElementById("masterMessage").textContent="マスターを保存しました。";
+}
+function deleteMasterItem(globalIndex){
+ const r=masterRows()[globalIndex];if(!r)return;
+ if(!confirm(`「${r.name}」をマスターから削除しますか？`))return;
+ (r.category==="quick"?QUICK:OTHER).splice(r.index,1);
+ saveMaster();rebuildOtherSelect();renderMain();renderSettings();
+ document.getElementById("masterMessage").textContent=`「${r.name}」を削除しました。`;
+}
+function moveMasterItem(fromGlobal,toGlobal){
+ if(fromGlobal===toGlobal)return;
+ const rows=masterRows(),from=rows[fromGlobal],to=rows[toGlobal];
+ if(!from||!to)return;
+ const src=from.category==="quick"?QUICK:OTHER;
+ const item=src.splice(from.index,1)[0];
+ if(from.category===to.category){
+  const dest=to.category==="quick"?QUICK:OTHER;
+  let idx=to.index;
+  if(from.index<to.index)idx--;
+  dest.splice(Math.max(0,idx),0,item);
+ }else{
+  const dest=to.category==="quick"?QUICK:OTHER;
+  dest.splice(to.index,0,item);
+ }
+ saveMaster();rebuildOtherSelect();renderMain();renderSettings();
+}
+function setupMasterReorder(){
+ if(!masterEditMode)return;
+ let dragged=null,longTimer=null,touchRow=null,startY=0,armed=false;
+ const rows=[...document.querySelectorAll("#masterList .master-row")];
+ rows.forEach(row=>{
+  row.addEventListener("dragstart",e=>{dragged=Number(row.dataset.global);row.classList.add("dragging")});
+  row.addEventListener("dragend",()=>{row.classList.remove("dragging");document.querySelectorAll(".drag-over").forEach(x=>x.classList.remove("drag-over"))});
+  row.addEventListener("dragover",e=>{e.preventDefault();row.classList.add("drag-over")});
+  row.addEventListener("dragleave",()=>row.classList.remove("drag-over"));
+  row.addEventListener("drop",e=>{e.preventDefault();const to=Number(row.dataset.global);row.classList.remove("drag-over");if(dragged!==null)moveMasterItem(dragged,to)});
+  const handle=row.querySelector(".master-drag");
+  handle.addEventListener("touchstart",e=>{
+   touchRow=row;startY=e.touches[0].clientY;armed=false;
+   longTimer=setTimeout(()=>{armed=true;row.classList.add("dragging");if(navigator.vibrate)navigator.vibrate(25)},450);
+  },{passive:true});
+  handle.addEventListener("touchmove",e=>{
+   if(!touchRow)return;
+   if(!armed&&Math.abs(e.touches[0].clientY-startY)>10){clearTimeout(longTimer);touchRow=null;return}
+   if(!armed)return;
+   e.preventDefault();
+   const el=document.elementFromPoint(e.touches[0].clientX,e.touches[0].clientY)?.closest(".master-row");
+   document.querySelectorAll(".drag-over").forEach(x=>x.classList.remove("drag-over"));
+   if(el&&el!==touchRow)el.classList.add("drag-over");
+  },{passive:false});
+  handle.addEventListener("touchend",e=>{
+   clearTimeout(longTimer);
+   if(armed&&touchRow){
+    const over=document.querySelector("#masterList .master-row.drag-over");
+    if(over)moveMasterItem(Number(touchRow.dataset.global),Number(over.dataset.global));
+   }
+   document.querySelectorAll(".dragging,.drag-over").forEach(x=>x.classList.remove("dragging","drag-over"));
+   touchRow=null;armed=false;
+  });
+ });
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}let masterEditMode=false;
+function masterRows(){
+ return [...QUICK.map((x,i)=>({category:"quick",categoryLabel:"よく使う処置",name:x[0],point:x[1],index:i})),
+         ...OTHER.map((x,i)=>({category:"other",categoryLabel:"その他の処置",name:x[0],point:x[1],index:i}))];
+}
+function renderSettings(){
+ document.getElementById("masterCount").textContent=`${QUICK.length+OTHER.length}件`;
+ const toggle=document.getElementById("toggleMasterEdit");
+ if(toggle){toggle.textContent=masterEditMode?"編集完了":"編集";toggle.classList.toggle("active",masterEditMode)}
+ document.getElementById("masterList").innerHTML=masterRows().map((r,globalIndex)=>`<div class="master-row ${masterEditMode?"editing":""}" draggable="${masterEditMode}" data-cat="${r.category}" data-index="${r.index}" data-global="${globalIndex}">
+ <div class="master-drag" title="長押しして並べ替え">☰</div>
+ <div class="master-row-content"><div class="master-row-top"><div class="master-row-name">${escapeHtml(r.name)}</div><div class="master-row-point">${yen(r.point)}</div></div><div class="master-row-cat">${r.categoryLabel}</div></div>
+ <div class="master-row-actions"><button class="master-row-edit" data-master-edit="${globalIndex}">編集</button><button class="master-row-delete" data-master-delete="${globalIndex}">削除</button></div>
+ </div>`).join("");
+ document.querySelectorAll("[data-master-edit]").forEach(b=>b.onclick=()=>openMasterEditor(Number(b.dataset.masterEdit)));
+ document.querySelectorAll("[data-master-delete]").forEach(b=>b.onclick=()=>deleteMasterItem(Number(b.dataset.masterDelete)));
+ setupMasterReorder();
 },{passive:false});
 
 renderMain();
