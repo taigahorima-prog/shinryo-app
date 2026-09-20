@@ -303,12 +303,20 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   -webkit-backdrop-filter:blur(12px);
   backdrop-filter:blur(12px);
 }
+</style><style>
+/* v5.26: 固定の戻るボタン用に集計ヘッダーを下げる */
+#summaryView{
+  padding-top:72px !important;
+}
+#closeSummary.backbtn{
+  top:max(54px, calc(env(safe-area-inset-top) + 10px)) !important;
+}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.25</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.26</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
