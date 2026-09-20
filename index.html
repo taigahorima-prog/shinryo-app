@@ -281,7 +281,7 @@ function animateRevenue(from,to){
 
 function saveVisit(){
  if(!draft.length)return;
- const k=todayKey(), beforeTotal=dayTotal(k), visits=visitsFor(k).slice();
+ const k=(returnToSummaryAfterEdit&&viewingDay)?viewingDay:todayKey(), beforeTotal=dayTotal(k), visits=visitsFor(k).slice();
  if(editingVisitId){
    const i=visits.findIndex(v=>v.id===editingVisitId);
    if(i>=0)visits[i]={...visits[i],earTag:earTag.trim(),farmerName:farmerName.trim(),items:draft.map(e=>({...e,id:uid()})),updatedAt:new Date().toISOString()};
@@ -298,6 +298,8 @@ function saveVisit(){
  animateRevenue(beforeTotal,afterTotal);
  if(returnToSummaryAfterEdit){
    returnToSummaryAfterEdit=false;
+   selectedSummaryDay=k;
+   viewingDay=null;
    renderSummary();
    show("summaryView");
  }
@@ -312,7 +314,7 @@ function renderSummary(){
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
- for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
+ for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
  renderSelectedDay();
 }
 let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null;
@@ -327,10 +329,22 @@ function renderSelectedDay(){
  const y=shownMonth.getFullYear(),m=shownMonth.getMonth();
  if(!selectedSummaryDay.startsWith(`${y}-${pad(m+1)}-`)){selectedSummaryDay=null;box.innerHTML="";return}
  const visits=visitsFor(selectedSummaryDay);
- if(!visits.length){box.innerHTML="";return}
- box.innerHTML=`<div class="selected-day-title">${Number(selectedSummaryDay.slice(5,7))}月${Number(selectedSummaryDay.slice(8,10))}日の診療</div>`+
- visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div>`}).join("");
+ const title=`<div class="selected-day-title">${Number(selectedSummaryDay.slice(5,7))}月${Number(selectedSummaryDay.slice(8,10))}日の診療</div>`;
+ const cards=visits.length?visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div>`}).join(""):"";
+ box.innerHTML=title+cards+'<div class="day-add-wrap"><button id="addVisitFromSummary" class="day-add-button">診療を追加</button></div>';
  box.querySelectorAll("[data-summary-edit]").forEach(b=>b.onclick=()=>editVisit(selectedSummaryDay,b.dataset.summaryEdit,true));
+ document.getElementById("addVisitFromSummary").onclick=()=>startVisitForDay(selectedSummaryDay);
+}
+function startVisitForDay(k){
+ // For today, use the normal input screen. For another date, save the new visit to that selected date.
+ viewingDay=k;
+ draft=[];editingVisitId=null;earTag="";farmerName="";quantity=1;
+ const e=document.getElementById("earTag"),f=document.getElementById("farmerName");if(e)e.value="";if(f)f.value="";
+ const sel=document.getElementById("otherSelect");if(sel)sel.value="";
+ const q=document.getElementById("quantity");if(q)q.textContent="1";
+ const add=document.getElementById("addOther");if(add)add.disabled=true;
+ returnToSummaryAfterEdit=true;
+ renderMain();show("mainView");
 }
 function openDay(k){
  viewingDay=k;const visits=visitsFor(k);
