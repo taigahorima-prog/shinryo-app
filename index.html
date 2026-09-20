@@ -161,7 +161,7 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.9</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.10</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -573,3 +573,8 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.ser
 </script>
 </body>
 </html>
+<style>
+/* v5.10: 今日の日付の濃い塗りを解除 */
+#calendar .day.today{background:#fff !important}
+#calendar .day.today.selected{background:#fff !important}
+</style>
