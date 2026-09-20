@@ -128,12 +128,31 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .revisit-choice{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:12px 13px;text-align:left;display:flex;align-items:center;gap:8px;font-size:15px}
 .revisit-choice:last-child{border-bottom:0}.revisit-choice-name{font-weight:650;flex:1}.revisit-choice-date{font-size:12px;color:#777}
 .revisit-message{padding:11px 13px;font-size:13px;color:#777}
+</style><style>
+/* v5.8 final override */
+#selectedDayPanel .day-add-wrap{padding:12px 0 28px;width:100%}
+#selectedDayPanel .day-add-button{
+  -webkit-appearance:none;appearance:none;
+  box-sizing:border-box;width:100% !important;min-height:112px !important;
+  margin:0 !important;padding:16px !important;
+  border:0 !important;border-radius:15px !important;
+  background:#e9f3ff !important;color:#087ff5 !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  gap:10px !important;font-size:17px !important;font-weight:700 !important;
+}
+#selectedDayPanel .day-add-plus{
+  width:40px;height:40px;border-radius:50%;
+  background:#087ff5;color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:29px;line-height:1;font-weight:400;
+}
+#selectedDayPanel .day-add-label{font-size:17px;font-weight:700;color:#087ff5}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.7</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.8</div><div class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
