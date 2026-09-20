@@ -160,12 +160,28 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 /* v5.11: calendar-date entry mode */
 .calendar-date-entry #todayVisitsSection{display:none !important}
 .calendar-date-entry #total{display:none !important}
+</style><style>
+/* v5.13: 日付指定入力タイトルを大きく */
+.calendar-date-entry #revenueLabel{
+  font-size:30px !important;
+  line-height:1.25 !important;
+  font-weight:800 !important;
+  color:#111 !important;
+  margin-top:8px !important;
+  margin-bottom:12px !important;
+}
+</style><style>
+/* v5.14: iOS-style swipe to delete */
+.summary-swipe-wrap{position:relative;overflow:hidden;border-radius:15px;margin-bottom:10px;background:#ff3b30}
+.summary-swipe-delete{position:absolute;right:0;top:0;bottom:0;width:82px;border:0;background:#ff3b30;color:#fff;font-size:27px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.summary-swipe-wrap .summary-visit-card{position:relative;z-index:2;margin-bottom:0;transition:transform .18s ease;will-change:transform;touch-action:pan-y;background:#fff}
+.summary-swipe-wrap.open .summary-visit-card{transform:translateX(-82px)}
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.12</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.14</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
@@ -362,6 +378,41 @@ function selectSummaryDay(k){
  renderSummary();
  setTimeout(()=>document.getElementById("selectedDayPanel")?.scrollIntoView({behavior:"smooth",block:"nearest"}),0);
 }
+
+function deleteSummaryVisit(id){
+ const k=selectedSummaryDay,visits=visitsFor(k).slice(),v=visits.find(x=>x.id===id);if(!v)return;
+ const label=v.earTag||"この診療";
+ if(!confirm(`${label} の診療を削除しますか？`))return;
+ data[k]=visits.filter(x=>x.id!==id);
+ if(!data[k].length)delete data[k];
+ saveData();renderSummary();
+}
+function setupSummarySwipeDelete(){
+ const wraps=[...document.querySelectorAll(".summary-swipe-wrap")];
+ wraps.forEach(w=>{
+  const card=w.querySelector(".summary-visit-card");
+  let sx=0,sy=0,dx=0,tracking=false;
+  card.addEventListener("touchstart",e=>{
+   document.querySelectorAll(".summary-swipe-wrap.open").forEach(x=>{if(x!==w)x.classList.remove("open")});
+   sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;tracking=true;card.style.transition="none";
+  },{passive:true});
+  card.addEventListener("touchmove",e=>{
+   if(!tracking)return;
+   const x=e.touches[0].clientX-sx,y=e.touches[0].clientY-sy;
+   if(Math.abs(y)>Math.abs(x)&&Math.abs(y)>8){tracking=false;card.style.transition="";return}
+   if(Math.abs(x)>7)e.preventDefault();
+   dx=Math.max(-92,Math.min(0,x+(w.classList.contains("open")?-82:0)));
+   card.style.transform=`translateX(${dx}px)`;
+  },{passive:false});
+  card.addEventListener("touchend",()=>{
+   if(!tracking){card.style.transform="";return}
+   card.style.transition="";card.style.transform="";
+   if(dx<-38)w.classList.add("open");else w.classList.remove("open");
+   tracking=false;
+  });
+ });
+ document.querySelectorAll("[data-summary-delete]").forEach(b=>b.onclick=()=>deleteSummaryVisit(b.dataset.summaryDelete));
+}
 function renderSelectedDay(){
  const box=document.getElementById("selectedDayPanel"); if(!box)return;
  if(!selectedSummaryDay){box.innerHTML="";return}
@@ -369,9 +420,10 @@ function renderSelectedDay(){
  if(!selectedSummaryDay.startsWith(`${y}-${pad(m+1)}-`)){selectedSummaryDay=null;box.innerHTML="";return}
  const visits=visitsFor(selectedSummaryDay);
  const title=`<div class="selected-day-title">${Number(selectedSummaryDay.slice(5,7))}月${Number(selectedSummaryDay.slice(8,10))}日の診療</div>`;
- const cards=visits.length?visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div>`}).join(""):"";
+ const cards=visits.length?visits.map((v,i)=>{const label=v.earTag?v.earTag:`診療${i+1}`;const farmer=v.farmerName?`<div class="summary-farmer">${v.farmerName}</div>`:"";return `<div class="summary-swipe-wrap" data-swipe-id="${v.id}"><button class="summary-swipe-delete" data-summary-delete="${v.id}" aria-label="削除">×</button><div class="summary-visit-card"><div class="summary-visit-info"><div class="summary-ear">${label}</div>${farmer}<div class="summary-items">${grouped(v.items).map(([n,x])=>`${n} ×${x.quantity}`).join(" / ")}</div></div><div class="summary-visit-money">${yen(totalItems(v.items))}</div><button class="today-visit-edit" data-summary-edit="${v.id}">編集</button></div></div>`}).join(""):"";
  box.innerHTML=title+cards+'<div class="day-add-wrap"><button id="addVisitFromSummary" class="day-add-button"><span class="day-add-plus">＋</span><span class="day-add-label">診療を追加</span></button></div>';
  box.querySelectorAll("[data-summary-edit]").forEach(b=>b.onclick=()=>editVisit(selectedSummaryDay,b.dataset.summaryEdit,true));
+ setupSummarySwipeDelete();
  document.getElementById("addVisitFromSummary").onclick=()=>startVisitForDay(selectedSummaryDay);
 }
 function startVisitForDay(k){
