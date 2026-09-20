@@ -257,7 +257,7 @@ function saveVisit(){
  }else{
    visits.push({id:uid(),createdAt:new Date().toISOString(),earTag:earTag.trim(),farmerName:farmerName.trim(),items:draft.map(e=>({...e,id:uid()}))});
  }
- data[k]=visits; saveData(); draft=[]; editingVisitId=null; editOrigin="main";
+ data[k]=visits; saveData(); draft=[]; editingVisitId=null;
  const afterTotal=dayTotal(k);
  earTag="";farmerName="";quantity=1;
  const otherSel=document.getElementById("otherSelect");if(otherSel)otherSel.value="";
