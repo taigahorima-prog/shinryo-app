@@ -304,19 +304,36 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
   backdrop-filter:blur(12px);
 }
 </style><style>
-/* v5.26: 固定の戻るボタン用に集計ヘッダーを下げる */
-#summaryView{
-  padding-top:72px !important;
-}
+/* v5.27: 集計ヘッダーは元位置、戻るボタンは左下に固定 */
 #closeSummary.backbtn{
-  top:max(54px, calc(env(safe-area-inset-top) + 10px)) !important;
+  position:fixed !important;
+  top:auto !important;
+  left:18px !important;
+  bottom:max(24px, calc(env(safe-area-inset-bottom) + 12px)) !important;
+  z-index:2000 !important;
+  min-width:88px !important;
+  height:48px !important;
+  padding:0 14px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border:1px solid rgba(0,122,255,.16) !important;
+  border-radius:16px !important;
+  background:rgba(247,249,252,.94) !important;
+  color:#087ff5 !important;
+  font-size:17px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  box-shadow:0 3px 14px rgba(0,0,0,.07) !important;
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
 }
 </style></head>
 <body>
 <div id="mainView" class="view active">
 <header>
   <div class="topline"><div class="spacer"></div><button id="menuButton" class="summary-btn menu-button" aria-label="メニュー">☰</button></div>
-  <div class="app-version">v5.26</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
+  <div class="app-version">v5.27</div><div id="revenueLabel" class="label">本日の収益</div><div id="total" class="total">¥0</div>
 </header>
 <main>
 <div id="editingBanner" class="editing-banner"></div>
