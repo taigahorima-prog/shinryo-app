@@ -95,6 +95,13 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 .summary-fixed-total{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:14px;z-index:80;display:flex;flex-direction:column;line-height:1.08;pointer-events:none}
 .summary-fixed-total span{font-size:12px;color:#666}.summary-fixed-total strong{font-size:22px;font-weight:800}
 #summaryView main{padding-top:62px}
+</style><style>
+/* v3.7 */
+.summary-fixed-total{display:none!important}
+#summaryView main{padding-top:0}
+.summary-month-revenue{margin:12px 0 20px;padding:0 2px}
+.summary-month-revenue .label{font-size:16px;color:#6e6e73;margin-bottom:4px}
+.summary-month-total{font-size:48px;line-height:1.05;font-weight:800;letter-spacing:-1.5px}
 </style></head>
 <body>
 <div id="mainView" class="view active">
@@ -125,15 +132,12 @@ button,.step,.plus,.add,.summary-btn,.save-visit,.monthbtn,.daily-row,
 </div>
 
 <div id="summaryView" class="view">
-<div class="summary-fixed-total"><span>今月の収益</span><strong id="fixedMonthTotal">¥0</strong></div>
 <main>
 <button id="closeSummary" class="backbtn">‹ 戻る</button>
+<div class="summary-month-revenue"><div class="label">今月の収益</div><div id="fixedMonthTotal" class="summary-month-total">¥0</div></div>
 <div class="summary-head"><button id="prevMonth" class="monthbtn">‹</button><h2 id="monthTitle"></h2><button id="nextMonth" class="monthbtn">›</button></div>
 <div id="calendar" class="calendar"></div><div id="selectedDayPanel" class="selected-day-panel"></div>
-<div class="stats"><div class="label">この月の収益</div><div id="monthTotal" class="stats-total">¥0</div>
-<div class="statline"><span>診療日数</span><strong id="workDays">0日</strong></div>
-<div class="statline"><span>1日平均</span><strong id="dayAverage">¥0</strong></div></div>
-<div class="section-title"><h2>この月の一覧</h2></div><div id="dailyList" class="daily"></div>
+
 </main>
 </div>
 
@@ -253,13 +257,11 @@ function renderSummary(){
  const y=shownMonth.getFullYear(),m=shownMonth.getMonth();document.getElementById("monthTitle").textContent=`${y}年${m+1}月`;
  const prefix=`${y}-${pad(m+1)}-`;const keys=Object.keys(data).filter(k=>k.startsWith(prefix)&&visitsFor(k).length).sort();
  const totals=keys.map(k=>[k,dayTotal(k)]),mt=totals.reduce((a,x)=>a+x[1],0);
- document.getElementById("monthTotal").textContent=yen(mt);document.getElementById("fixedMonthTotal").textContent=yen(mt);document.getElementById("workDays").textContent=`${keys.length}日`;document.getElementById("dayAverage").textContent=yen(keys.length?Math.round(mt/keys.length):0);
+ document.getElementById("fixedMonthTotal").textContent=yen(mt);
  const cal=document.getElementById("calendar");cal.innerHTML=["日","月","火","水","木","金","土"].map(x=>`<div class="dow">${x}</div>`).join("");
  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",'<div class="day blank"></div>');
  for(let d=1;d<=last;d++){let k=`${y}-${pad(m+1)}-${pad(d)}`,amt=dayTotal(k);let b=document.createElement("button");b.className="day"+(k===todayKey()?" today":"")+(amt?" has":"");b.innerHTML=`<span>${d}</span>${amt?`<span class="mini">${yen(amt)}</span>`:""}`;if(visitsFor(k).length)b.onclick=()=>selectSummaryDay(k);cal.appendChild(b)}
- const list=document.getElementById("dailyList");list.innerHTML=totals.length?totals.slice().reverse().map(([k,a])=>`<button class="daily-row" data-day="${k}"><span class="date">${Number(k.slice(5,7))}/${Number(k.slice(8,10))}</span><span class="amount">${yen(a)}</span></button>`).join(""):'<div class="empty" style="padding:14px">この月の記録はありません</div>';
- list.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>selectSummaryDay(b.dataset.day));
  renderSelectedDay();
 }
 let viewingDay=null; let returnToSummaryAfterEdit=false; let selectedSummaryDay=null;
